@@ -20,16 +20,20 @@ import           Slick
 
 import qualified Data.HashMap.Lazy as HML
 import qualified Data.Text                  as T
+import Text.Pandoc.Extensions (Extension(..), extensionsFromList)
+import qualified Text.Pandoc.Options as Pandoc
+import Text.Pandoc.Highlighting
+import Slick.Pandoc (markdownToHTMLWithOpts)
 
 ---Config-----------------------------------------------------------------------
 
 siteMeta :: SiteMeta
 siteMeta =
-    SiteMeta { siteAuthor = "Me"
-             , baseUrl = "https://example.com"
-             , siteTitle = "My Slick Site"
-             , twitterHandle = Just "myslickhandle"
-             , githubUser = Just "myslickgithubuser"
+    SiteMeta { siteAuthor = "Callan Mcgill"
+             , baseUrl = "https://boarders.github.io"
+             , siteTitle = "Callan McGill"
+             , twitterHandle = Nothing
+             , githubUser = Just "boarders"
              }
 
 outputFolder :: FilePath
@@ -102,7 +106,7 @@ buildPost srcPath = cacheAction ("build" :: T.Text, srcPath) $ do
   liftIO . putStrLn $ "Rebuilding post: " <> srcPath
   postContent <- readFile' srcPath
   -- load post content and metadata as JSON blob
-  postData <- markdownToHTML . T.pack $ postContent
+  postData <- convertMarkdown . T.pack $ postContent
   let postUrl = T.pack . dropDirectory1 $ srcPath -<.> "html"
       withPostUrl = _Object . at "url" ?~ String postUrl
   -- Add additional metadata we've been able to compute
@@ -157,7 +161,45 @@ buildRules = do
   buildFeed allPosts
   copyStaticFiles
 
+
 main :: IO ()
 main = do
   let shOpts = shakeOptions { shakeVerbosity = Chatty, shakeLintInside = ["\\"]}
   shakeArgsForward shOpts buildRules
+
+
+
+convertMarkdown :: T.Text -> Action Value
+convertMarkdown = markdownToHTMLWithOpts readerOptions writerOptions
+
+
+
+syntaxExtensions :: Pandoc.Extensions
+syntaxExtensions = 
+  extensionsFromList
+  [Ext_tex_math_dollars, Ext_tex_math_double_backslash, Ext_latex_macros]
+
+pandocExtensions :: Pandoc.Extensions
+pandocExtensions =
+     Pandoc.enableExtension Ext_smart Pandoc.pandocExtensions
+  <> syntaxExtensions
+
+
+readerOptions :: Pandoc.ReaderOptions
+readerOptions = Pandoc.def
+    { -- The following option causes pandoc to read smart typography, a nice
+      -- and free bonus.
+      Pandoc.readerExtensions = pandocExtensions
+
+    }
+
+writerOptions :: Pandoc.WriterOptions
+writerOptions = Pandoc.def
+    { -- This option causes literate haskell to be written using '>' marks in
+      -- html, which I think is a good default.
+      Pandoc.writerExtensions = pandocExtensions
+    , -- We want to have hightlighting by default, to be compatible with earlier
+      -- Hakyll releases
+      Pandoc.writerHighlightStyle = Just pygments
+    , Pandoc.writerHTMLMathMethod = Pandoc.MathJax ""
+    }
