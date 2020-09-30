@@ -34,9 +34,11 @@
             <div class="metadata"> </div>
             </div>
     </div>
-      {{#quote}}
-      <span class="quote"> "{{quote}}" </span>
-      {{/quote}}      
+    {{#quote}}
+    {{#quoteAuthor}}
+    <span class="quote"> "{{quote}}"  - {{quoteAuthor}}</span>
+    {{/quoteAuthor}}          
+    {{/quote}}      
     </div>
     <article class="post">
         {{{content}}}
