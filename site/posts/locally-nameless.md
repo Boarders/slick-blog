@@ -3,7 +3,8 @@ title: "Locally Nameless"
 author: Callan McGill
 date: Oct 27, 2019
 tags: [Type theory, Lambda Calculus]
-description: My first blog post using slick
+description: The locally nameless approach to substitution.
+quote: "“Now you people have names. That's because you don't know who you are. We know who we are, so we don't need names."
 ---
 
 
