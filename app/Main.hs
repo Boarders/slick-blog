@@ -77,6 +77,7 @@ data Post =
          , description :: String
          , image       :: Maybe String
          , quote       :: Maybe String
+         , quoteAuthor :: Maybe String
          }
     deriving (Generic, Eq, Ord, Show, FromJSON, ToJSON, Binary)
 
