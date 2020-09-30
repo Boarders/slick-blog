@@ -24,6 +24,8 @@ import Text.Pandoc.Extensions (Extension(..), extensionsFromList)
 import qualified Text.Pandoc.Options as Pandoc
 import Text.Pandoc.Highlighting
 import Slick.Pandoc (markdownToHTMLWithOpts)
+import Data.List (sortOn)
+import Data.Ord (Down(..))
 
 ---Config-----------------------------------------------------------------------
 
@@ -74,6 +76,7 @@ data Post =
          , tags        :: [Tag]
          , description :: String
          , image       :: Maybe String
+         , quote       :: Maybe String
          }
     deriving (Generic, Eq, Ord, Show, FromJSON, ToJSON, Binary)
 
@@ -89,7 +92,8 @@ data AtomData =
 buildIndex :: [Post] -> Action ()
 buildIndex posts' = do
   indexT <- compileTemplate' "site/templates/index.html"
-  let indexInfo = IndexInfo {posts = posts'}
+  let sortPosts' = sortPosts posts'
+  let indexInfo = IndexInfo {posts = sortPosts'}
       indexHTML = T.unpack $ substitute indexT (withSiteMeta $ toJSON indexInfo)
   writeFile' (outputFolder </> "index.html") indexHTML
 
@@ -127,6 +131,16 @@ formatDate humanDate = toIsoDate parsedTime
   where
     parsedTime =
       parseTimeOrError True defaultTimeLocale "%b %e, %Y" humanDate :: UTCTime
+
+
+sortPosts :: [Post] -> [Post]
+sortPosts = sortOn (Down . parsedTime . date)
+  where
+    parsedTime d =
+      parseTimeOrError True defaultTimeLocale "%b %e, %Y" d :: UTCTime      
+
+
+      
 
 rfc3339 :: Maybe String
 rfc3339 = Just "%H:%M:SZ"
