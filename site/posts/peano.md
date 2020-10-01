@@ -14,7 +14,7 @@ quoteAuthor: Grothendieck
 This gave a foundational theory, _set theory_, in which the main branches of mathematics could be encoded. 
 Within this mileux arose the axiomatic method whereby mathematical objects came to be characterized not by any particular construction, but by the set of axioms (or laws) which an object satisfies. This eventually gave rise to the development of category theory as a foundational theory of mathematics characterizing objects via their universal properties. $\def\N{\mathsf{N}}$ 
 
-Let us turn then to a paradigmatic case; a characterization of the natural numbers. Peano gave an axiomatization of the natural numbers as a set $\N$ with the following properties:
+Consider a paradigmatic case; characterizing the natural numbers. Peano gave an axiomatization of the natural numbers as a set $\N$ with the following properties:
 
 
  -  There exist terms $0 \in \N$ and $\mathrm{s} : \N \rightarrow \N$.
@@ -68,7 +68,7 @@ data ℕ : Set where
 {-# BUILTIN NATURAL ℕ #-}
 ```
 
-Now out first port of call is to formulate equivalence relations:
+Our first port of call is to formulate equivalence relations:
 
 ```agda
 record Rel (A : Set) : Set₁ where
@@ -79,12 +79,14 @@ record Rel (A : Set) : Set₁ where
     transitivity : ∀ {a b c : A} → a ≃ b → b ≃ c → a ≃ c
 ```
 
-We note that this definition is slightly different from what is typical in mathematics. Rather than a (mere) subset of the diagonal we use a dependent type taking two arguments and returning what we can think of as the _evidence_ that the two values are equal. The axioms this satisfies are reflexivity, that any element is equal to itself; symmetry, that we can freely reverse equalities; and transitivity, that we can compose equalities. Let's show that $\mathbb{N}$, under Agda's built-in equality type $\equiv$, forms an equivalence relation. As a brief reminder, here is how the equality type is defined in Agda (ignoring level polymorphsim):
+We note that this definition is slightly different from what is typical in mathematics. Rather than a (mere) subset of the diagonal we use a dependent type taking two arguments and returning what we can think of as the _evidence_ that the two values are equal. The axioms this satisfies are reflexivity, that any element is equal to itself; symmetry, that we can freely reverse equalities; and transitivity, that we can compose equalities. 
+
+Let's show that Agda's built-in equality type, $\equiv$, is an equivalence relation on $\mathbb{N}$. As a brief reminder, here is how the equality type is defined (ignoring level polymorphsim):
 ```agda
 data _≡_ {A : Set} (x : A) : A → Set where
   refl : x ≡ x
 ```
-That is to say, that we can give a term $\mathrm{refl}$ of type $\mathrm{a} \equiv \mathrm{b}$ so long as Agda can directly compute that $\mathrm{a}$ and $\mathrm{b}$ are equal within the particular context. For example, if we define addition:
+That is to say, we can give a term $\mathrm{refl}$ of type $\mathrm{a} \equiv \mathrm{b}$ so long as Agda can directly compute that $\mathrm{a}$ and $\mathrm{b}$ are equal within the particular context. For example, if we define addition:
 ```agda
 _+_ : ℕ -> ℕ -> ℕ
 _+_ Zero     m = m
@@ -98,7 +100,7 @@ _ = refl
 ```
 as Agda can compute that both sides are equal.
 
-Back to an equivalence on $\mathbb{N}$, let's see that $\equiv$ satisfies the axioms:
+Coming back to $\mathbb{N}$, let's see that $\equiv$ satisfies the axioms:
 
 ```agda
 ℕ-refl : ∀ {n : ℕ} → n ≡ n
@@ -172,7 +174,7 @@ Several things are worth noting about this defintion:
 ```haskell
     class Eq a => Ord a
 ```
-  - We upgrade induction from a unary predicate $\phi : \N -> \mathbb{B}$ to a dependent type
+  - We upgrade induction from a unary predicate $\phi : \N \rightarrow \mathbb{B}$ to a dependent type
     $\mathrm{P} : \N \rightarrow \mathrm{Set}$.
   - As we will see later, we would like this upgraded principle to be able to _compute_. As such 
     we add two laws that dictate how computation should unfold.
@@ -215,14 +217,17 @@ In the last two cases the $\mathrm{induction}$ laws hold definitionally from how
   
 ```agda
 
-from-ℕ : ∀ {N : Set} {{_ : Rel N}} → {{ _ : Peano N }} → ℕ → N
-from-ℕ {N} n = induction (λ _ -> N ) n zero succ
+from-ℕ : ∀ {N : Set} {{_ : Rel N}} → {{ _ : Peano N}} → ℕ → N
+from-ℕ {N} n = induction (λ _ -> N) n zero succ
 
 to-ℕ : ∀ {N : Set} {{_ : Rel N}} → {{_ : Peano N}} → N → ℕ
 to-ℕ n = induction (λ _ → ℕ) n zero succ
 ```
 
-Pleasantly both definitions are essentially identical using instance resolution to determine the relevant inducton principle and values to use. Now we can show these form equivalences. To get a flavour let
+Pleasantly both definitions are essentially identical, using instance resolution to determine the relevant induction principle and values to use. Here we see the power of constructive induction. We don't use induction to prove a _property_ per se, but to compute. Since the dependent types in question are constant induction simply _is_ recursion!
+
+
+Now we can show these maps form equivalences. To get a flavour let
 us step through the development for the first equality:
 ```agda
 to∘from : 
@@ -279,7 +284,7 @@ to∘from {N} {{_}} {{peano}} (Succ n)
   = refl
 ```
 
-The slightly gnarly explicit arguments in the second case are to help along the rewrite mechanism as it didn't seem to cooperate with a less verbosity.
+The slightly gnarly explicit arguments in the second case are to help along the rewrite mechanism as it didn't seem to cooperate with a less verbose alternative.
 
 The other proof is similarly a case of following our nose (or rather following the typechecker). We first remind ourselves of some equality principles we have imported above (again simplifying away level polymorphism):
 ```agda
@@ -299,25 +304,13 @@ liftEq refl = reflexivity
 
 With these can now give the proof:
 ```agda
--- We make use of the liftEq as we prove the stronger claim
--- that from-ℕ (to-ℕ n) ≡ n
+
 from∘to : 
-  ∀ {N : Set}{{ rel : Rel N}} → {{peano : Peano N}} 
-  → (n : N) → from-ℕ (to-ℕ n) ≃ n
-from∘to n = 
-  let
-    prop-eq : from-ℕ (to-ℕ n) ≡ n
-    prop-eq =
-      induction
-     -- we use induction on the principle
-     -- we are trying to show.
-        (λ n → from-ℕ (to-ℕ  n) ≡ n)
-        n 
-        zero-lem
-        (λ {prev} → succ-lem prev )
-  in
- -- We then lift the equality from ≡ to ≃
-    liftEq prop-eq
+  ∀ {N : Set}{{ rel : Rel N}} → {{peano : Peano N}} → (n : N) →
+  from-ℕ (to-ℕ n) ≃ n
+from∘to {N} n = liftEq (prop-eq {N})
+             -- We make use of liftEq as we prove the
+             -- stronger claim that from-ℕ (to-ℕ n) ≡ n
   where
   -- In the zero case we apply induction-zero underneath from-ℕ
   -- and then use the definition of from-ℕ.
@@ -329,12 +322,12 @@ from∘to n =
       pf1 : from-ℕ (induction {N} (λ _ → ℕ) zero Zero Succ) ≡ from-ℕ Zero
       pf1 = cong from-ℕ (induction-zero (λ _ → ℕ) Zero Succ)
 
-      pf2 : from-ℕ Zero ≡ zero
+      pf2 : from-ℕ  Zero ≡ zero
       pf2 = refl
     in
       trans pf1 pf2
-  -- In the successor case we analogously apply induction-succ
-  -- underneath from-ℕ and then recursely use the previous proof.
+  -- In the successor case we similarly apply induction-succ
+  -- underneath from-ℕ and then recurse on the previous proof.
   succ-lem 
     : ∀ {N} {{_ : Rel N}} {{peano : Peano N}} (prev : N)
     → from-ℕ (induction (λ _ → ℕ) prev Zero Succ) ≡ prev 
@@ -347,20 +340,33 @@ from∘to n =
 
       pf2 : from-ℕ (Succ (induction (λ _ → ℕ) prev Zero Succ)) ≡ (succ prev)
       pf2 = cong succ pf
-    in 
+    in
       trans pf1 pf2
+
+  prop-eq 
+    : ∀ {N} {{_ : Rel N}} {{peano : Peano N}}
+    → from-ℕ (to-ℕ n) ≡ n
+  prop-eq =
+      induction
+     -- we use induction on the principle
+     -- we are trying to show with the above
+     -- lemmas.
+        (λ n → from-ℕ (to-ℕ  n) ≡ n)
+        n 
+        zero-lem
+        (λ {prev} → succ-lem prev)
 ```
 
 This shows that any two types which satisfy the Peano axioms are equivalent in the sense that there
 are maps between them which form an isomorphism up to equivalence.
 
-This is quite interesting as it stands but we might wonder if there is a more direct characterization of the natural numbers? After all, our original definition as a recursive algebraic data type seems to give a perfectly good specification of what the natural numbers are and how they can be built. Let us turn to a characterization of $\mathbb{N}$ given by Lawvere that allows us to recover this intuition.
+This is quite interesting as it stands but we might wonder if there is a more direct characterization of the natural numbers? After all, our original definition as a recursive algebraic data type seems to give a perfectly good specification of what the natural numbers _are_. Let us turn to a characterization of $\mathbb{N}$ given by Lawvere that allows us to flesh out this intuition.
 
-We define the category of discrete dynamical systems which has:
+We define the category of discrete dynamical systems, whose:
   
-  - Objects given by set $X$ along with a starting point $x_0 \in X$ and a 
+  - Objects are sets $X$ equipped with a starting point $x_0 \in X$ and a 
     self-map $f : X \rightarrow X$.
-  - Morphisms given by those set maps $\phi : X \rightarrow Y$ which take basepoint to basepoint
+  - Morphisms are functions $\phi : X \rightarrow Y$ which take basepoint to basepoint
     and which commute with the self-map:
     $$
 \begin{array}{lll}
@@ -371,7 +377,7 @@ X          & \xrightarrow{\phi} & Y      \\
 $$
     
     
-  Lawvere then observed that the natural numbers are the initial object in the category of discrete dynamical systems. In other words, every other dynamical system receives a unique map from $\left( \mathbb{N}\; , \; 0 : \mathbb{N}\; ,\; \mathrm{s}\; : \; \mathbb{N} \rightarrow \mathbb{N}\right)$. Let us phrase this idea in terms of language more familiar to functional programmers. First define a "pattern functor":
+  Lawvere then observed that the natural numbers are the initial object in the category of discrete dynamical systems. In other words, every other dynamical system receives a unique map from $\left( \mathbb{N}\; , \; 0 : \mathbb{N}\; ,\; \mathrm{s}\; : \; \mathbb{N} \rightarrow \mathbb{N}\right)$. Let us phrase this idea in terms of language more familiar to functional programmers. First define a "pattern functor" for $\mathbb{N}$:
 ```agda
 data NatP (r : Set) : Set where
   ZeroP : NatP r
@@ -396,16 +402,35 @@ instance
     map f (SuccP x) = SuccP (f x)
 ```
 
-Functional programmers might recognise that the dynamical systems above discussed above are
-in fact $\mathrm{F}$-algebras for this pattern functor which we define as follows:
+Functional programmers might recognise that the discrete dynamical systems discussed above are
+in fact $\mathrm{F}$-algebras for this pattern functor, which we define as follows:
 ```agda
 record Alg (F : Set → Set) (A : Set) : Set where
   field
     μ : F A → A
 open Alg {{...}} public
 ```
+In particular if we define discrete dynamical systems:
+```agda
+record Dyn (A : Set) : Set where
+  constructor D
+  field
+    basepoint : A
+    self-map  : A → A
+```
+then we can show then any dynamical system gives rise to an algebra:
+```agda
+from-Dyn : ∀ {A : Set} → Dyn A → Alg NatP A
+from-Dyn {A} (D basepoint self-map) = record { μ = alg }
+  where
+  alg : NatP A → A
+  alg ZeroP = basepoint
+  alg (SuccP a) = self-map a
+```
 
-It is then easy for us to check that $\mathbb{N}$ is indeed an algebra for this functor:
+and we leave as an exercise to show that there is an isomorphism between $\mathrm{NatP}$ algebra structures on $\mathrm{A}$ and discrete dynamical system structures (an observation we can upgrade to an isomorphism between the respective categories).
+
+Let's give the algebra structure for $\mathbb{N}$:
 ```agda
 instance
   ℕ-Alg : Alg NatP ℕ
@@ -417,21 +442,20 @@ instance
 ```
 
 Just as in Lawvere's characterization we now wish to show that this algebra is initial. 
-First we have to define maps between algebras. Suppose $\mathrm{A}$ and $\mathrm{B}$ are 
-$\mathrm{F}$-algebras. We then say a map $f : \mathrm{A} \rightarrow \mathrm{B}$ is an 
-$\mathrm{F}$-algeba homomorphism when the following diagram commutes (where the downward
+For that, we first have to define maps between algebras. Suppose $\mathrm{A}$ and $\mathrm{B}$ are 
+$\mathrm{F}$-algebras. We then say a map $m : \mathrm{A} \rightarrow \mathrm{B}$ is an 
+$\mathrm{F}$-algebra homomorphism when the following diagram commutes (where the downward
 arrows are the algebra maps):
 
 $$
 \begin{array}{lll}
-F A          & \xrightarrow{F f} & F B  \\ 
+F A          & \xrightarrow{F m} & F B  \\ 
 \downarrow &             & \downarrow   \\ 
-A          & \xrightarrow{f} & B         \\ 
+A          & \xrightarrow{m} & B         \\ 
 \end{array}
 $$
 
-In other words the algebra map commutes with the map in question or in equations:
-
+In other words the algebra map commutes with the map in question, or in equations:
 $$
 f \circ \mu_{A} \equiv \mu_{B} \circ (F f)
 $$
@@ -441,10 +465,10 @@ record Alg-Homo (A B : Set) {F : Set → Set} {{f : Functor F}}
   (FA : Alg F A) (FB : Alg F B) : Set₁ where
   constructor AlgHom
   field
-    ↓-map  : A → B
+    →-fun  : A → B
     μ-comm 
       : ∀ (fa : F A) 
-      → ↓-map (Alg.μ FA fa) ≡ (Alg.μ FB) (Arr ↓-map fa)
+      → →-fun (Alg.μ FA fa) ≡ (Alg.μ FB) (Arr →-fun fa)
 ```
 
 Now we can try to prove that the algebra structure on $\mathbb{N}$ is initial. We first show there
@@ -477,17 +501,17 @@ We can then show uniqueness:
   → {{FA : Alg NatP A}}
   → (alg-hom : Alg-Homo ℕ A ℕ-Alg FA)
   → ∀ (n : ℕ) 
-  → (Alg-Homo.↓-map alg-hom n) 
-  ≡ (Alg-Homo.↓-map (ℕ-weakly-initial {{FA}}) n)
+  → (Alg-Homo.→-fun alg-hom n) 
+  ≡ (Alg-Homo.→-fun (ℕ-weakly-initial {{FA}}) n)
 ℕ-init-uniq alg-hom Zero = μ-comm ZeroP
   where
     open Alg-Homo alg-hom public
 ℕ-init-uniq {{FA}} alg-hom (Succ n) = 
   let
-    pf1 :  ↓-map (Succ n) ≡ μ (SuccP (↓-map n))
+    pf1 :  →-fun (Succ n) ≡ μ (SuccP (→-fun n))
     pf1 = μ-comm (SuccP n)
 
-    pf2 :  μ (SuccP (↓-map n)) ≡ μ (SuccP (Alg-Homo.↓-map ℕ-weakly-initial n))
+    pf2 :  μ (SuccP (→-fun n)) ≡ μ (SuccP (Alg-Homo.→-fun ℕ-weakly-initial n))
     pf2 = cong (μ ∘ SuccP) (ℕ-init-uniq alg-hom n)
   in
     trans pf1 pf2
@@ -499,24 +523,101 @@ We don't infer algebra homomorphisms and so we need to pass each argument separa
 open the various records to bring the fields into scope. 
 In the first case we have the following goal:
 ```agda
-↓-map 0 ≡ μ ZeroP
+→-fun 0 ≡ μ ZeroP
 ```
 We note that this is definitionally equivalent to showing:
 ```agda
-↓-map (μ ZeroP) ≡ μ (Arr ↓-map ZeroP)
+→-fun (μ ZeroP) ≡ μ (Arr →-fun ZeroP)
 ```
 and this is the $\mu$-$\mathrm{comm}$ law!
 
 In the successor case we have to prove:
 ```agda
-↓-map (Succ n) ≡ μ (SuccP (Alg-Homo.↓-map ℕ-weakly-initial n))
+→-fun (Succ n) ≡ μ (SuccP (Alg-Homo.→-fun ℕ-weakly-initial n))
 ```
 
-We use a similar observation as above to first rewrite the left-hand-side using the $\mu$-$\mathrm{comm}$ law. At that point (as before) rewrite the inner part by recursion showing the result.
+We use a similar observation as above to first rewrite the left-hand-side using the $\mu$-$\mathrm{comm}$ law. At that point (as before) we can rewrite the inner part by recursion.
 
 One nice thing about this characterization (beyond being much simpler to reason about!) is that
-the same idea of initial algebra semantics works just as well for any algebraic data type. 
-Moreover this definition is _categorical_, allowing us to define a natural number object in any cartesian closed category.
+the same idea of initial algebra semantics works just as well for any algebraic data type. For example
+we can do exactly the same for lists as we have for $\mathbb{N}$:
+```agda
+data ListP (A : Set) (r : Set) : Set where
+  NilP  : ListP A r
+  ConsP : A → r → ListP A r
+
+data List (A : Set) : Set where
+  Nil  : List A
+  Cons : A → List A → List A
+
+instance
+  ListP-Functor : ∀ {A} →  Functor (ListP A)
+  ListP-Functor {A} = Func map-L
+    where
+    map-L : ∀ {B} {C} → (B → C) → ListP A B → ListP A C
+    map-L f NilP = NilP
+    map-L f (ConsP a b) = ConsP a (f b)
+
+
+record HasFold (A : Set) (B : Set) : Set₁ where
+  constructor F
+  field
+    initial  : B
+    operator : A → B → B
+
+fromHasFold : ∀ {A B : Set} →  HasFold A B → Alg (ListP A) B
+fromHasFold {A} {B} (F initial operator) = record { μ = alg }
+  where
+  alg : ListP A B → B
+  alg NilP = initial
+  alg (ConsP a b) = operator a b
+
+toHasFold : ∀ {A B : Set} → Alg (ListP A) B → HasFold A B
+toHasFold {A} {B} record { μ = μ } = F init op
+  where
+  init : B
+  init = μ NilP
+
+  op : A → B → B
+  op a b = μ (ConsP a b)
+
+instance
+  List-Alg : ∀ {A} → Alg (ListP A) (List A)
+  List-Alg {A} = record { μ = alg }
+    where
+    alg : ListP A (List A) → List A
+    alg NilP = Nil
+    alg (ConsP a as) = Cons a as
+
+foldr : ∀ {A B : Set} → (A → B → B) → B → List A → B
+foldr op init Nil         = init
+foldr op init (Cons a as) = op a (foldr op init as)
+
+foldr-Alg : ∀ {A B : Set}
+  → {{FA : Alg (ListP A) B}}
+  → List A → B
+foldr-Alg = foldr (λ a b → μ (ConsP a b)) (μ NilP)
+
+List-weakly-initial
+  : ∀ {A B : Set}
+  → {{FA : Alg (ListP A) B}}
+  → Alg-Homo (List A) B (List-Alg {A}) FA
+List-weakly-initial {A} {B} = AlgHom foldr-Alg law
+  where
+
+  law : (fa : ListP A (List A)) →
+    foldr (λ a b → μ (ConsP a b)) (μ NilP) (μ fa)
+      ≡
+    μ (Arr (foldr (λ a b → μ (ConsP a b)) (μ NilP)) fa)
+  law NilP         = refl
+  law (ConsP a as) = refl
+```
+and we see that out of initiality naturally comes $\mathrm{foldr}$! 
+$\mathrm{F}$-algebra semantics give rise to _recursion principles_! 
+The essence of $\mathbb{N}$, from this point of view,
+lies in its recursive structure. After all, in a dependently-typed setting recursion and induction are
+really two sides of the same coin. 
+
 
 Thank you for reading! Hopefully this has given some ideas for how we can explore mathematical ideas in Agda leveraging the typechecker to guide our proofs. Feel free to contact me [here](mailto:callan.mcgill@gmail.com) with questions, thoughts, ideas, or all of the above. 
 <!---
