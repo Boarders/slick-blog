@@ -336,7 +336,7 @@ from∘to {N} n = liftEq (prop-eq {N})
     let
       pf1 : from-ℕ (induction (λ _ → ℕ) (succ prev) Zero Succ)
           ≡ from-ℕ (Succ (induction (λ _ → ℕ) prev Zero Succ))
-      pf1 = cong (from-ℕ) (induction-succ (λ _ → ℕ) prev Zero Succ)
+      pf1 = cong from-ℕ (induction-succ (λ _ → ℕ) prev Zero Succ)
 
       pf2 : from-ℕ (Succ (induction (λ _ → ℕ) prev Zero Succ)) ≡ (succ prev)
       pf2 = cong succ pf
@@ -360,7 +360,7 @@ from∘to {N} n = liftEq (prop-eq {N})
 This shows that any two types which satisfy the Peano axioms are equivalent in the sense that there
 are maps between them which form an isomorphism up to equivalence.
 
-This is quite interesting as it stands but we might wonder if there is a more direct characterization of the natural numbers? After all, our original definition as a recursive algebraic data type seems to give a perfectly good specification of what the natural numbers _are_. Let us turn to a characterization of $\mathbb{N}$ given by Lawvere that allows us to flesh out this intuition.
+This is quite interesting as it stands but we might wonder if there is a more direct characterization of the natural numbers? After all, our original definition as a recursive algebraic data type seems to give a perfectly good specification of what the natural numbers _are_. Let us turn to a characterization of $\mathbb{N}$ given by Lawvere to flesh out this intuition.
 
 We define the category of discrete dynamical systems, whose:
   
@@ -612,18 +612,13 @@ List-weakly-initial {A} {B} = AlgHom foldr-Alg law
   law NilP         = refl
   law (ConsP a as) = refl
 ```
-and we see that out of initiality naturally comes $\mathrm{foldr}$! 
-$\mathrm{F}$-algebra semantics give rise to _recursion principles_! 
+and we see that out of initiality naturally comes $\mathrm{foldr}$!
+$\mathrm{F}$-algebra semantics give rise to _recursion principles_!
 The essence of $\mathbb{N}$, from this point of view,
 lies in its recursive structure. After all, in a dependently-typed setting recursion and induction are
-really two sides of the same coin. 
+really two sides of the same coin.
 
 
-Thank you for reading! Hopefully this has given some ideas for how we can explore mathematical ideas in Agda leveraging the typechecker to guide our proofs. Feel free to contact me [here](mailto:callan.mcgill@gmail.com) with questions, thoughts, ideas, or all of the above. 
-<!---
-Thanks go to [DRAFT READERS HERE] for providing valuable feedback.
--->
+Thank you for reading! The full code is available [here](https://github.com/Boarders/agda-peano/blob/master/Peano.agda). Hopefully this has given some ideas for how we can explore mathematical ideas in Agda leveraging the typechecker to guide our proofs. Feel free to contact me [here](mailto:callan.mcgill@gmail.com) with questions, thoughts, ideas, or all of the above. 
 
-
-
-
+<i>With warmest thanks to Sam Derbyshire, Reed Mullanix and Alixandra Prybyla for their valuable feedback.</i>
