@@ -10,13 +10,30 @@ quoteAuthor: Grothendieck
 ---
 
 
-  The 19th century brought about a revolution in the foundations of mathematics culminating in the Zermelo--Frankel axioms.
-This gave a foundational theory, _set theory_, in which the main branches of mathematics could be encoded.
-Within this mileux arose the axiomatic method whereby mathematical objects came to be characterized
-not by any particular construction, but by the set of axioms (or laws) which an object satisfies.
-This eventually gave rise to the development of category theory as a foundational theory of mathematics characterizing objects via their universal properties. $\def\N{\mathsf{N}}$
+  The 19th century brought about an unprecedented revolution in the foundations of mathematics culminating in the Zermelo--Frankel (ZF) axioms.
+The ZF axioms gave a logical basis to Cantor's _set theory_ as a foundational theory
+, in which the main branches of mathematics (analysis, topology, geometry and number theory) could be encoded and thusly understood.
+It was through this newly-systematized approach that the axiomatic method was born.
+This is of historical and philosophical interest as it marks a decisive structuralist turn
+in mathematical thought. It is at this time that mathematical objects begin to be characterized
+not by any particular construction, but by the collection of axioms (or laws) an object satisfies.
+$\def\N{\mathsf{N}}$
 
-Consider a paradigmatic case; characterizing the natural numbers. Peano gave an axiomatization of the natural numbers as a set $\N$ with the following properties:
+Consider a paradigmatic case; characterizing the natural numbers. In this post we will explore two
+different formulations of the natural numbers, the first given by Peano in the late 19th century, the
+second, a more categorical approach inspired by Lawvere.
+This will provide us a springboard upon which to explore _how_ we can formulate and reason about
+mathematical structures in Agda. Since Agda is based on dependent type theory our formulations will be
+[_constructive_](https://en.wikipedia.org/wiki/Constructivism_(philosophy_of_mathematics)).
+This means our constructions will be _proof relevant_. In this setting, proofs are first-class entities
+and as such our algebraic structures will encode both the operations a structure has along with
+proofs of the properties that it satisfies.
+
+
+We will assume the reader has some familiarity with Agda (with reminders sprinkled in throughout) and has an interest in formalizing mathematics.
+
+
+Let us begin with Peano's axioms. A set $\N$ satisfies Peano's axioms if the following properties hold:
 
 
  -  There exist terms $0 \in \N$ and $\mathrm{s} : \N \rightarrow \N$.
@@ -34,7 +51,7 @@ $$ \forall \; \mathrm{n}, \mathrm{m} \in \N \; . \; \mathrm{s} (\mathrm{n}) \sim
 How can we prove that this uniquely determines the natural numbers? Our strategy would roughly go as follows:
 
   - Give a particular construction of $\mathbb{N}$ showing it satisfies the axioms.
-  - For any set $\N$ satisfying the axioms construct maps:
+  - For any set $\N$ satisfying the axioms, construct maps:
   $$\begin{aligned}
       \mathrm{from} &: \mathbb{N} \rightarrow \mathsf{N} \\
       \mathrm{to}   &: \mathsf{N} \rightarrow \mathbb{N} \\
@@ -47,8 +64,7 @@ How can we prove that this uniquely determines the natural numbers? Our strategy
     to show the these maps form an equivalence.
 
 
-  Let's try to formalise this, with some necessary adjustments along the way, in Agda.
-We start with a few imports we will need later:
+  Let's try to formalise this constructively in Agda. We start with a few imports we will need later:
 
 ```agda
 module Peano where
@@ -59,7 +75,7 @@ open import Function
   using (_∘_)
 ```
 
-Typically in Agda (or Haskell) we define the (unary) natural numbers as follows:
+Typically, we define the (unary) natural numbers as follows:
 
 ```agda
 data ℕ : Set where
@@ -70,24 +86,28 @@ data ℕ : Set where
 {-# BUILTIN NATURAL ℕ #-}
 ```
 
-Our first port of call is to formulate equivalence relations:
+Our first port of call is to formulate equivalence relations. In Agda we usually encode
+algebraic structures as [records](https://agda.readthedocs.io/en/v2.6.1.1/language/record-types.html).
+As mentioned in the introduction, since proofs are first-class, we carry around not just the
+structure of the binary relation but also the properties it satisfies:
 
 ```agda
-record Rel (A : Set) : Set₁ where
+record EqRel (A : Set) : Set₁ where
   field
     _≃_ : A → A → Set
-    reflexivity  : ∀ {a : A} → a ≃ a
-    symmetry     : ∀ {a b : A} → a ≃ b → b ≃ a
+    reflexivity  : ∀ {a : A}     → a ≃ a
+    symmetry     : ∀ {a b : A}   → a ≃ b → b ≃ a
     transitivity : ∀ {a b c : A} → a ≃ b → b ≃ c → a ≃ c
 ```
 
 We note that this definition is slightly different from what is typical in mathematics.
-Rather than a (mere) subset of the diagonal we use a dependent type taking two arguments
-and returning what we can think of as the _evidence_ that the two values are equal.
-The axioms this satisfies are reflexivity, that any element is equal to itself; symmetry,
-that we can freely reverse equalities; and transitivity, that we can compose equalities.
+Rather than a _subset_ of the diagonal we make use of a two-argument dependent type $\_ \simeq \_$. Given $\mathrm{a}, \mathrm{b} : \mathrm{A}$,
+the type $\mathrm{a}\;\simeq\;\mathrm{b}$ gives the collection of  _evidence_ that $\mathrm{a}$ and $\mathrm{b}$ are equal.
+The axioms this satisfies are reflexivity (that any element is equal to itself) symmetry
+(that we can freely reverse equalities) and transitivity (that we can compose equalities).
 
-Let's show that Agda's built-in equality type, $\equiv$, is an equivalence relation on $\mathbb{N}$. As a brief reminder, here is how the equality type is defined (ignoring level polymorphsim):
+Let's show that Agda's built-in equality type, $\equiv$, is an equivalence relation on $\mathbb{N}$. As a brief reminder, here is how the equality type is defined, if we ignore 
+[level polymorphism](https://agda.readthedocs.io/en/v2.6.1.1/language/universe-levels.html):
 ```agda
 data _≡_ {A : Set} (x : A) : A → Set where
   refl : x ≡ x
@@ -108,7 +128,8 @@ _ = refl
 ```
 as Agda can compute that both sides are equal.
 
-Coming back to $\mathbb{N}$, let's see that $\equiv$ satisfies the axioms:
+Coming back to $\mathbb{N}$, let's show how $\equiv$ satisfies the properties of an equivalence
+relation:
 
 ```agda
 ℕ-refl : ∀ {n : ℕ} → n ≡ n
@@ -120,23 +141,24 @@ Coming back to $\mathbb{N}$, let's see that $\equiv$ satisfies the axioms:
 ℕ-trans : ∀ {m n r : ℕ} → m ≡ n → n ≡ r → m ≡ r
 ℕ-trans  m≡n n≡r rewrite m≡n | n≡r = refl
 ```
-Here we make use of Agda's rewrite mechanism. By providing an equality proof of the form
-$\mathrm{a} \equiv \mathrm{b}$, rewrite will replace subexpressions in the goal of the
+Here we make use of Agda's
+[rewrite construction](https://agda.readthedocs.io/en/v2.6.1/language/with-abstraction.html#with-rewrite). By providing an equality proof of the form
+$\mathrm{a} \equiv \mathrm{b}$, the rewrite construction will replace subexpressions in the goal of the
 form $\mathrm{a}$ with $\mathrm{b}$. For example, in $\mathbb{N}\mathrm{-symm}$, we use
 the equality term we are given as an argument to rewrite so that each appearance of
-$\mathrm{n}$ is replaced with $\mathrm{m}$, at which point we may fill the hole with
+$\mathrm{n}$ is replaced with $\mathrm{m}$. At this point we may fill the hole with
 $\mathrm{refl} : \mathrm{m} \equiv \mathrm{m}$.
 
 It is worth noting that we haven't used anything special about $\mathbb{N}$ and these
 same definitions would work to prove that _any_ set forms an equivalence relation under $\equiv$.
 
-Now we can write an instance of Rel for $\mathbb{N}$:
+Now we can write an instance of EqRel for $\mathbb{N}$:
 
 ```agda
-open Rel {{...}} public
+open EqRel {{...}} public
 
 instance
-  ≡-Nat : Rel ℕ
+  ≡-Nat : EqRel ℕ
   ≡-Nat =
     record
     { _≃_          = _≡_
@@ -146,23 +168,25 @@ instance
     }
 ```
 
-Here we use Agda's instance arguments mechanism. We start by bringing the fields of
-Rel into scope for those instances which can resolved. This is essentially equivalent
-to us defining top-level functions of the form:
+Here we use Agda's 
+[instance arguments](https://agda.readthedocs.io/en/v2.6.1.1/language/instance-arguments.html) 
+mechanism, the analog to Haskell's typeclass instances.
+We start by bringing the fields of EqRel into scope for those instances which can be resolved.
+This is essentially equivalent to us defining top-level functions of the form:
 ```agda
-_≃_         : ∀ {A : Set} {{_ : Rel A}} → A → A → Set
-reflexivity : ∀ {A : Set} {{_ : Rel A}} {a b : A} → (a ≃ a)
+_≃_         : ∀ {A : Set} {{_ : EqRel A}} → A → A → Set
+reflexivity : ∀ {A : Set} {{_ : EqRel A}} {a b : A} → (a ≃ a)
 -- etc.
 ```
-Implicit arguments $\{\{\_ : \mathrm{Rel} \mathrm{A}\}\}$ are resolved by searching
-for instances we have available in scope. In particular, we define an instance of Rel
+Implicit arguments $\{\{\_ : \mathrm{EqRel}\; \mathrm{A}\}\}$ are resolved by searching
+for instances we have available in scope. In particular, we define an instance of EqRel
 for $\mathbb{N}$ which means that we may use these methods on $\mathbb{N}$ and Agda
 will infer the instance we have provided.
 
-Now we are in a position to formalise the Peano axioms. In much the same way as we have done with equivalence relations we use records to encode algebraic structure:
+Now we are in a position to formalise the Peano axioms. In much the same way as we have done with equivalence relations we again use records to encode algebraic structure:
 
 ```agda
-record Peano (N : Set) {{rel : Rel N}} : Set₁ where
+record Peano (N : Set) {{rel : EqRel N}} : Set₁ where
   field
     zero        : N
     succ        : N → N
@@ -239,10 +263,10 @@ we have defined $\mathbb{N}$-$\mathrm{induction}$.
 functions to and from $\mathbb{N}$:
 ```agda
 
-from-ℕ : ∀ {N : Set} {{_ : Rel N}} → {{ _ : Peano N}} → ℕ → N
+from-ℕ : ∀ {N : Set} {{_ : EqRel N}} → {{ _ : Peano N}} → ℕ → N
 from-ℕ {N} n = induction (λ _ -> N) n zero succ
 
-to-ℕ : ∀ {N : Set} {{_ : Rel N}} → {{_ : Peano N}} → N → ℕ
+to-ℕ : ∀ {N : Set} {{_ : EqRel N}} → {{_ : Peano N}} → N → ℕ
 to-ℕ n = induction (λ _ → ℕ) n zero succ
 ```
 
@@ -256,7 +280,7 @@ Now we can show these maps form equivalences. To get a flavour let
 us step through the development for the first equality:
 ```agda
 to∘from :
-  ∀ {N : Set} {{ _ : Rel N }} → {{peano : Peano N}}
+  ∀ {N : Set} {{ _ : EqRel N }} → {{peano : Peano N}}
   → (n : ℕ) → to-ℕ {N} (from-ℕ n) ≡ n
 to∘from n = {!!}
 ```
@@ -271,7 +295,7 @@ Goal: Peano.induction peano (λ _ → ℕ)
 ————————————————————————————————————————————————————————————
 n     : ℕ
 peano : Peano N  (not in scope, instance)
-_     : Rel N    (instance)
+_     : EqRel N    (instance)
 N     : Set      (not in scope)
 
 ```
@@ -280,7 +304,7 @@ We can see that in order for $\mathbb{N}$-$\mathrm{induction}$ to make progress 
 on $\mathrm{n}$:
 ```agda
 to∘from :
-  ∀ {N : Set} {{ _ : Rel N }} → {{peano : Peano N}}
+  ∀ {N : Set} {{ _ : EqRel N }} → {{peano : Peano N}}
   → (n : ℕ) → to-ℕ {N} (from-ℕ n) ≡ n
 to∘from Zero     = {!!}
 to∘from (Succ n) = {!!}
@@ -290,12 +314,12 @@ The new goal for $\mathrm{Zero}$ is:
 ```terminal
 Goal: Peano.induction peano (λ _ → ℕ) (Peano.zero peano) 0 Succ ≡ 0
 ```
-This is precisely our $\mathrm{induction}$-$\mathrm{zero}$ principle! Similarly we can
+But this is precisely our $\mathrm{induction}$-$\mathrm{zero}$ principle! Similarly we can
 now use the $\mathrm{induction}$-$\mathrm{succ}$ principle in the second case and then recurse
 giving us:
 ```agda
 to∘from :
-  ∀ {N : Set} {{ _ : Rel N }} → {{peano : Peano N}}
+  ∀ {N : Set} {{ _ : EqRel N }} → {{peano : Peano N}}
   → (n : ℕ) → to-ℕ {N} (from-ℕ n) ≡ n
 to∘from Zero =  (induction-zero (λ _ → ℕ) Zero Succ)
 to∘from {N} {{_}} {{peano}} (Succ n)
@@ -310,7 +334,7 @@ to∘from {N} {{_}} {{peano}} (Succ n)
 ```
 
 The slightly gnarly explicit arguments in the second case are to help along the rewrite
-mechanism as it didn't seem to cooperate with a less verbose alternative.
+construction as it didn't seem to cooperate with a less verbose alternative.
 
 The other proof is similarly a case of following our nose (or rather following the
 typechecker). We first remind ourselves of some equality principles we have imported
@@ -326,7 +350,7 @@ trans : ∀ {a b c : A} → a ≡ b → b ≡ c → a ≡ c
 ```
 We also will need the fact that we can lift any propositional equality into an equivalence relation:
 ```agda
-liftEq : ∀ {A : Set}  {{r : Rel A}} → {a b : A} → a ≡ b → (a ≃ b)
+liftEq : ∀ {A : Set}  {{r : EqRel A}} → {a b : A} → a ≡ b → (a ≃ b)
 liftEq refl = reflexivity
 ```
 
@@ -334,7 +358,7 @@ With these can now give the proof:
 ```agda
 
 from∘to :
-  ∀ {N : Set}{{ rel : Rel N}} → {{peano : Peano N}} → (n : N) →
+  ∀ {N : Set}{{ rel : EqRel N}} → {{peano : Peano N}} → (n : N) →
   from-ℕ (to-ℕ n) ≃ n
 from∘to {N} n = liftEq (prop-eq {N})
              -- We make use of liftEq as we prove the
@@ -343,7 +367,7 @@ from∘to {N} n = liftEq (prop-eq {N})
   -- In the zero case we apply induction-zero underneath from-ℕ
   -- and then use the definition of from-ℕ.
   zero-lem
-    : ∀ {N} {{_ : Rel N}} {{peano : Peano N}}
+    : ∀ {N} {{_ : EqRel N}} {{peano : Peano N}}
     → from-ℕ {N} (induction {N} (λ _ → ℕ) zero Zero Succ) ≡ zero
   zero-lem {N} =
     let
@@ -357,7 +381,7 @@ from∘to {N} n = liftEq (prop-eq {N})
   -- In the successor case we similarly apply induction-succ
   -- underneath from-ℕ and then recurse on the previous proof.
   succ-lem
-    : ∀ {N} {{_ : Rel N}} {{peano : Peano N}} (prev : N)
+    : ∀ {N} {{_ : EqRel N}} {{peano : Peano N}} (prev : N)
     → from-ℕ (induction (λ _ → ℕ) prev Zero Succ) ≡ prev
     → from-ℕ (induction (λ _ → ℕ) (succ prev) Zero Succ) ≡ succ prev
   succ-lem prev pf =
@@ -372,7 +396,7 @@ from∘to {N} n = liftEq (prop-eq {N})
       trans pf1 pf2
 
   prop-eq
-    : ∀ {N} {{_ : Rel N}} {{peano : Peano N}}
+    : ∀ {N} {{_ : EqRel N}} {{peano : Peano N}}
     → from-ℕ (to-ℕ n) ≡ n
   prop-eq =
       induction
@@ -392,7 +416,7 @@ This is quite interesting as it stands but we might wonder if there is a more di
 characterization of the natural numbers? After all, our original definition as a
 recursive algebraic data type seems to give a perfectly good specification of what
 the natural numbers _are_. Let us turn to a characterization of $\mathbb{N}$ given
-by Lawvere to flesh out this intuition.
+by Lawvere.
 
 We define the category of discrete dynamical systems, whose:
 
@@ -411,8 +435,9 @@ $$
 
   Lawvere then observed that the natural numbers are the initial object in the category
 of discrete dynamical systems. In other words, every other dynamical system receives
-a unique map from
+a _unique_ map from the discrete dynamical system
 $\left( \mathbb{N}\; , \; 0 : \mathbb{N}\; ,\; \mathrm{s}\; : \; \mathbb{N} \rightarrow \mathbb{N}\right)$.
+
 Let us phrase this idea in terms of language more familiar to functional programmers. First define a "pattern functor" for $\mathbb{N}$:
 ```agda
 data NatP (r : Set) : Set where
@@ -421,7 +446,7 @@ data NatP (r : Set) : Set where
 ```
 This has the same shape as $\mathbb{N}$ but we leave the recursion open (this same pattern
 of open recursion is the animating idea behind [recursion schemes](https://hackage.haskell.org/package/recursion-schemes)).
-We can show that this is a functor (we don't worry here about the functor laws):
+We can show that this is a functor (we don't worry about the functor laws):
 ```agda
 record Functor (F : Set → Set) : Set₁ where
   constructor Func
@@ -461,7 +486,7 @@ from-Dyn : ∀ {A : Set} → Dyn A → Alg NatP A
 from-Dyn {A} (D basepoint self-map) = record { μ = alg }
   where
   alg : NatP A → A
-  alg ZeroP = basepoint
+  alg ZeroP     = basepoint
   alg (SuccP a) = self-map a
 ```
 
@@ -480,7 +505,7 @@ instance
     alg (SuccP x) = Succ x
 ```
 
-Just as in Lawvere's characterization we now wish to show that this algebra is initial.
+Just as in Lawvere's characterization, we now wish to show that this algebra is initial.
 For that, we first have to define maps between algebras. Suppose $\mathrm{A}$ and $\mathrm{B}$ are
 $\mathrm{F}$-algebras. We then say a map $m : \mathrm{A} \rightarrow \mathrm{B}$ is an
 $\mathrm{F}$-algebra homomorphism when the following diagram commutes (where the downward
@@ -558,8 +583,8 @@ We can then show uniqueness:
     open Alg-Homo alg-hom public
 ```
 
-We don't infer algebra homomorphisms and so we need to pass each argument separately and
-open the various records to bring the fields into scope.
+We don't infer algebra homomorphisms and so we need to pass them as arguments and
+open the various records to bring their fields into scope.
 In the first case we have the following goal:
 ```agda
 →-fun 0 ≡ μ ZeroP
@@ -659,10 +684,10 @@ lies in its recursive structure. After all, in a dependently-typed setting recur
 really two sides of the same coin.
 
 
-Thank you for reading! The full code is available
+Thank you for reading! The full code for these examples is available
 [here](https://github.com/Boarders/agda-peano/blob/master/Peano.agda). Hopefully
 this has given some ideas for how we can explore mathematical ideas in Agda leveraging
 the typechecker to guide our proofs. Feel free to contact me
 [here](mailto:callan.mcgill@gmail.com) with questions, thoughts, ideas, or all of the above.
 
-<i>With warmest thanks to Sam Derbyshire, Reed Mullanix and Alixandra Prybyla for their valuable feedback.</i>
+<i>With warmest thanks to Sam Derbyshire, Reed Mullanix, Alixandra Prybyla and Shon Feder for their valuable feedback.</i>
