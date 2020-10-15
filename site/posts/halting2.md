@@ -36,7 +36,7 @@ the basic features of the language we need we will closely follow the
 [DeBruijn](https://plfa.github.io/DeBruijn/) 
 chapter from the fantastic [Programming Language Foundations in Agda](https://plfa.github.io/).
 
-Our language will have just $\mathrm{Booleans}$, $\mathbb{B}$, and function types:
+Our language will be simply-typed, having just $\mathrm{Booleans}$, $\mathbb{B}$, and function types:
 ```agda
 data Type : Set where
   𝔹  :  Type
