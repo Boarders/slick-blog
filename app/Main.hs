@@ -27,6 +27,7 @@ import Slick.Pandoc (markdownToHTMLWithOpts)
 import Data.List (sortOn)
 import Data.Ord (Down(..))
 
+
 ---Config-----------------------------------------------------------------------
 
 siteMeta :: SiteMeta
@@ -82,7 +83,7 @@ data Post =
     deriving (Generic, Eq, Ord, Show, FromJSON, ToJSON, Binary)
 
 data AtomData =
-  AtomData { title        :: String
+  AtomData { atomTitle    :: String
            , domain       :: String
            , author       :: String
            , posts        :: [Post]
@@ -135,8 +136,9 @@ formatDate humanDate = toIsoDate parsedTime
 
 
 sortPosts :: [Post] -> [Post]
-sortPosts = sortOn (Down . parsedTime . date)
+sortPosts = sortOn (\p -> (Down  (parsedTime . date $ p, title $ p)))
   where
+    parsedTime :: String -> UTCTime
     parsedTime d =
       parseTimeOrError True defaultTimeLocale "%b %e, %Y" d :: UTCTime      
 
@@ -154,7 +156,7 @@ buildFeed posts = do
   now <- liftIO getCurrentTime
   let atomData =
         AtomData
-          { title = siteTitle siteMeta
+          { atomTitle = siteTitle siteMeta
           , domain = baseUrl siteMeta
           , author = siteAuthor siteMeta
           , posts = mkAtomPost <$> posts
