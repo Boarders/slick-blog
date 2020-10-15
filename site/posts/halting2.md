@@ -29,11 +29,11 @@ open import Data.Sum
   using (_⊎_; inj₁; inj₂)
 ```
 
-For this development we will use a typed lambda calculus essentially identical to 
-[PCF](https://en.wikipedia.org/wiki/Programming_Computable_Functions) as this makes the 
+For this development we will use a typed lambda calculus essentially identical to
+[PCF](https://en.wikipedia.org/wiki/Programming_Computable_Functions) as this makes the
 core ideas of the formalisation quite tidy. In order to get
-the basic features of the language we need we will closely follow the 
-[DeBruijn](https://plfa.github.io/DeBruijn/) 
+the basic features of the language we need we will closely follow the
+[DeBruijn](https://plfa.github.io/DeBruijn/)
 chapter from the fantastic [Programming Language Foundations in Agda](https://plfa.github.io/).
 
 Our language will be simply-typed, having just $\mathrm{Booleans}$, $\mathbb{B}$, and function types:
@@ -200,8 +200,8 @@ data _⇓_ : ∀ {Γ ty} → Expr Γ ty → Expr Γ ty → Set where
     → L ⇓ N
 ```
 
-Now let us think about our $\mathbf{Halt}$ term from last time. We define the notion of 
-halting by saying an expression halts when there exists a value that it steps to. 
+Now let us think about our $\mathbf{Halt}$ term from last time. We define the notion of
+halting by saying an expression halts when there exists a value that it steps to.
 We then postulate the existence of a $\mathrm{halt}$ function with the expected properties.
 
 ```agda
@@ -221,7 +221,7 @@ postulate
 
 Here we assume we have a term $\mathrm{halt}$ which has the type of a function
 that takes an argument of any type and returns a bool. We assume that it is decidable that halt always
-returns $\mathrm{tt}$ or $\mathrm{ff}$. Furthermore, the terms $\mathrm{halt-tt}$ and 
+returns $\mathrm{tt}$ or $\mathrm{ff}$. Furthermore, the terms $\mathrm{halt-tt}$ and
 $\mathrm{halt-ff}$ encode that if $\mathrm{halt}$ returns $\mathrm{tt}$, then the term is normalizing
 and conversely, if it returns $\mathrm{ff}$, then it is non-normalizing.
 
