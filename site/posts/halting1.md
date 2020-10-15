@@ -1,7 +1,7 @@
 ---
 title: "The Halting Problem (part 1)"
 author: Callan McGill
-date: "Oct 06, 2020"
+date: "Oct 10, 2020"
 tags: [Halting Problem, Haskell]
 description: Exploring the Halting problem in Haskell
 quote: \'Begin at the beginning,\' the King said, very gravely, \'and go on till you come to the end&#58; then stop.\'
