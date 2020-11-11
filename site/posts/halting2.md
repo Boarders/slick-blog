@@ -129,8 +129,7 @@ We then extend this from variable renamings to arbitrary context morphisms:
 -- extend a context morphism to a context with another variable
 -- bound.
 exts : ∀ {Γ Δ}
-  → (∀ {ty} →       ty ∈ Γ →     Expr Δ ty)
-    ---------------------------------
+  → (∀ {ty} →  ty ∈ Γ → Expr Δ ty)
   → (∀ {ty tyB} → ty ∈ (Γ , tyB) → Expr (Δ , tyB) ty)
 exts ρ z     = var z
 exts ρ (s x) = rename s (ρ x)
@@ -176,31 +175,35 @@ data Value : ∀ {Γ} {ty} → Expr Γ ty → Set where
   V-ff : ∀ {Γ} → Value {Γ} {𝔹} ff
 
 data _↓_ : ∀ {Γ} {ty} → Expr Γ ty -> Expr Γ ty -> Set where
-
+-- reduce on the left
   l-↓ : ∀ {Γ ty tyB} {L L' : Expr Γ (ty ⇒ tyB)} {R : Expr Γ ty}
     -> L ↓ L'
     -> app L R ↓ app L' R
-
+-- reduce on the right so long as we have already reduced the left
+-- to a value.
   r-↓ : ∀ {Γ ty tyB} {VL : Expr Γ (ty ⇒ tyB)} { R R' : Expr Γ ty}
     -> (Value VL)
     -> R ↓ R'
     -> app VL R ↓ app VL R'
 
-
+-- beta-reduction
   β-↓ : ∀ {Γ} {ty tyB} {N : Expr (Γ , tyB) ty} {V : Expr Γ tyB}
     -> (app (lam N) V) ↓ (N [ V ])
 
+-- reduce boolean in a conditional.
   if-↓ : ∀ {Γ} {ty} {b b' : Expr Γ 𝔹} {th el : Expr Γ ty}
     -> b ↓ b'
     -> (bool b th el) ↓ (bool b' th el)
 
+-- reduce to true branch
   if-tt-↓ : ∀ {Γ} {ty} {th el : Expr Γ ty}
     -> (bool tt th el) ↓ th
 
+-- reduce to false branch
   if-ff-↓ : ∀ {Γ} {ty} {th el : Expr Γ ty}
     -> (bool ff th el) ↓ el
 
-
+--recursively substitute fix expression
   fix-↓ : ∀ {Γ ty} {expr : Expr (Γ , ty) ty}
     -> fix expr ↓ (expr [ fix expr ])
 ```
