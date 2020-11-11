@@ -175,18 +175,18 @@ data Value : ∀ {Γ} {ty} → Expr Γ ty → Set where
   V-ff : ∀ {Γ} → Value {Γ} {𝔹} ff
 
 data _↓_ : ∀ {Γ} {ty} → Expr Γ ty -> Expr Γ ty -> Set where
--- reduce on the left
+-- reduce on the left in an application.
   l-↓ : ∀ {Γ ty tyB} {L L' : Expr Γ (ty ⇒ tyB)} {R : Expr Γ ty}
     -> L ↓ L'
     -> app L R ↓ app L' R
 -- reduce on the right so long as we have already reduced the left
--- to a value.
+-- argument to a value.
   r-↓ : ∀ {Γ ty tyB} {VL : Expr Γ (ty ⇒ tyB)} { R R' : Expr Γ ty}
     -> (Value VL)
     -> R ↓ R'
     -> app VL R ↓ app VL R'
 
--- beta-reduction
+-- Perform beta-reduction.
   β-↓ : ∀ {Γ} {ty tyB} {N : Expr (Γ , tyB) ty} {V : Expr Γ tyB}
     -> (app (lam N) V) ↓ (N [ V ])
 
@@ -195,15 +195,15 @@ data _↓_ : ∀ {Γ} {ty} → Expr Γ ty -> Expr Γ ty -> Set where
     -> b ↓ b'
     -> (bool b th el) ↓ (bool b' th el)
 
--- reduce to true branch
+-- reduce conditional to true branch.
   if-tt-↓ : ∀ {Γ} {ty} {th el : Expr Γ ty}
     -> (bool tt th el) ↓ th
 
--- reduce to false branch
+-- reduce conditional to false branch.
   if-ff-↓ : ∀ {Γ} {ty} {th el : Expr Γ ty}
     -> (bool ff th el) ↓ el
 
---recursively substitute fix expression
+-- recursively substitute fix expression.
   fix-↓ : ∀ {Γ ty} {expr : Expr (Γ , ty) ty}
     -> fix expr ↓ (expr [ fix expr ])
 ```
