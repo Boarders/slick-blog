@@ -4,13 +4,13 @@ author: Callan McGill
 date: "Oct 10, 2020"
 tags: [Halting Problem, Agda]
 description: Exploring the Halting problem in Agda
-quote: Everything is vague to a degree you do not realize till you have tried to make it precise. 
+quote: Everything is vague to a degree you do not realize till you have tried to make it precise.
 quoteAuthor: Bertrand Russell
 
 ---
 
-In this post we are going to take the argument from [last time]( TO DO ) and formalise it in Agda. 
-As always let's grab some imports:
+In this post we are going to take the argument from [last time]( TO DO ) and formalise it in Agda.
+As always, let's grab some imports:
 
 ```agda
 module Halt where
@@ -30,44 +30,56 @@ open import Data.Sum
 ```
 
 For this development we will use a typed lambda calculus essentially identical to
-[PCF](https://en.wikipedia.org/wiki/Programming_Computable_Functions) as this makes the
-core ideas of the formalisation quite tidy. In order to get
-the basic features of the language we need we will closely follow the
+[PCF](https://en.wikipedia.org/wiki/Programming_Computable_Functions) (only with booleans over
+natural numbers), as this makes the
+formalisation quite tidy. In order to get
+the basic semantics of the language we will closely follow the
 [DeBruijn](https://plfa.github.io/DeBruijn/)
 chapter from the fantastic [Programming Language Foundations in Agda](https://plfa.github.io/).
 
-Our language will be simply-typed, having just $\mathrm{Booleans}$, $\mathbb{B}$, and function types:
+Our language will be simply-typed, having just booleans, $\mathbb{B}$, and function types:
 ```agda
 data Type : Set where
   𝔹  :  Type
   _⇒_ : Type → Type → Type
 ```
 
-We make use of intrinsically well-scoped, well-typed terms and so we use de-bruijn indices
-for variables which provide both an index into a context along with a  _proof_ that the variable
-points at some particular type:
+We make use of intrinsically well-scoped, well-typed terms and so we use proof-carrying
+de-bruijn indices for variables.
+In this set-up indices act both as an index into a typing context and as a _proof_ that
+the variable is well-typed in the current context.
 
-```
--- A context is a list of types
+```agda
+-- A typing context is a represented as a list of types.
+Con : Set
 Con = List Type
 
--- We use nil for the empty context
+-- We use nil for the empty context.
 nil : Con
 nil = []
 
+-- _,_ extends contexts to the right.
 infixl 6 _,_
 _,_ : Con → Type → Con
 _,_ con ty = ty ∷ con
 
--- A de-bruijn index into a context representing a proof that the context contains a given type
+-- A type for de-bruijn indices into a context. The index represents
+-- a pointer into a context along with a proof that the
+-- context contains the given type at that position.
+-- For example given the context:
+--
+--   Γ = 𝔹, 𝔹 ⇒ 𝔹
+--
+-- we have:
+--   - z   : 𝔹 ⇒ 𝔹 ∈ Γ
+--   - s z : 𝔹 ∈ Γ
 infix 4 _∈_
 data _∈_  (t : Type) : Con → Set where
   z : ∀ {ts} → t ∈ (t ∷ ts)
   s : ∀ {r} {ts} → (t ∈ ts) → t ∈ (r ∷ ts)
 ```
 
-We can now define our terms, where $\mathrm{Expr}\;\Gamma\; a$ denotes a term of type $]\mathrm{a}$
-in the typing context $\Gamma$:
+We can now define the terms of our language. Here $\mathrm{Expr}\;\Gamma\; \mathrm{a}$ denotes a term of type $\mathrm{a}$ in the typing context $\Gamma$:
 ```agda
 data Expr (Γ : Con) : Type → Set where
   var  : ∀ {a : Type} → a ∈ Γ → Expr Γ a
@@ -79,8 +91,10 @@ data Expr (Γ : Con) : Type → Set where
   fix  : ∀ {a} → Expr (Γ , a) a → Expr Γ a
 ```
 
-Here, $\mathrm{bool}$ denotes the conditional. Note that as both $\mathrm{lam}$
-and $\mathrm{fix}$ bind variables, they take arguments with extended contexts.
+The names are largely self-explanatory but we explicitly note that we are
+using $\mathrm{bool}$ for the conditional. It is also worth pointing out that
+as both $\mathrm{lam}$ and $\mathrm{fix}$ are binding forms, they take arguments
+with contexts extended by the type of the bound variable.
 
 
 We give an identical approach to variable substitution as in PLFA by first defining context
@@ -88,14 +102,17 @@ extension and variable renaming:
 
 ```agda
 ext : ∀ {Γ Δ : Con}
-  → (∀ {ty : Type} →       ty ∈ Γ →     ty ∈ Δ)
+  → (∀ {ty : Type} → ty ∈ Γ → ty ∈ Δ)
   → (∀ {ty tyB : Type} → ty ∈ Γ , tyB → ty ∈ Δ , tyB)
-ext ρ z = z
-ext ρ (s x) = s (ρ x)
+ext ρ z = z             -- if it is the newly bound variable
+                        -- we simply return it.
+ext ρ (s x) = s (ρ x)   -- otherwise we perform the substitution 
+                        -- and take successor.
 
-
+-- rename is defined by structural recursion, extending the renaming
+-- at binding sites and applying it when we reach variables.
 rename : ∀ {Γ Δ}
-  → (∀ {ty} → ty  ∈ Γ → ty ∈ Δ)
+  → (∀ {ty} → ty ∈ Γ → ty ∈ Δ)
   → (∀ {ty} → Expr Γ ty → Expr Δ ty)
 rename ρ (var x) = var (ρ x)
 rename ρ (app rator rand) = app (rename ρ rator) (rename ρ rand)
@@ -109,6 +126,8 @@ rename ρ (fix body) = fix (rename (ext ρ) body)
 We then extend this from variable renamings to arbitrary context morphisms:
 
 ```agda
+-- extend a context morphism to a context with another variable
+-- bound.
 exts : ∀ {Γ Δ}
   → (∀ {ty} →       ty ∈ Γ →     Expr Δ ty)
     ---------------------------------
@@ -116,6 +135,8 @@ exts : ∀ {Γ Δ}
 exts ρ z     = var z
 exts ρ (s x) = rename s (ρ x)
 
+-- Perform structural recursion, extending the context morphism at
+-- binding sites and applying it when we reach variables.
 subst : ∀ {Γ Δ}
   → (∀ {ty} → ty ∈ Γ → Expr Δ ty)
   → (∀ {ty} → Expr Γ ty → Expr Δ ty)
@@ -128,12 +149,13 @@ subst ρ (bool b th el) = bool (subst ρ b) (subst ρ th) (subst ρ el)
 subst ρ (fix body) = fix (subst (exts ρ) body)
 ```
 
-This gives parallel substitution and from here it is easy for us to define ordinary substitution
-by defining a context morphism which is the identity on $\Gamma$ and returns the term we
-are substituting for the first variable:
+This gives parallel substitution across an entire context $\Gamma$. From parallel
+substitution it is easy for us to define ordinary
+substitution of a single variable by defining a context morphism which is the
+identity on $\Gamma$ and returns the term we are substituting for the first variable:
 ```agda
 sub : ∀ {Γ} {ty tyB} → Expr Γ tyB → ty ∈ (Γ , tyB) → Expr Γ ty
-sub term z      = term
+sub term z   = term
 sub _ (s pf) = var pf
 
 _[_] : ∀ {Γ ty tyB}
@@ -143,11 +165,10 @@ _[_] : ∀ {Γ ty tyB}
 _[_] {Γ} {ty} {tyB} body term = subst {Γ , tyB} {Γ} (sub term) body
 ```
 
-Next we can define the values of our language, that is those terms which a terminating
-expression should return, and the small-step operational semantics, giving each
-possible choice of reduction that can take place within a term:
+Next we can define the values of our language, that is those terms which a program should
+return if it terminates. Along with values we give the small-step operational semantics,
+giving each possible choice of reduction that can take place within a term:
 ```agda
-
 data Value : ∀ {Γ} {ty} → Expr Γ ty → Set where
   V-↦ : ∀ {Γ } {ty tyB} {body : Expr (Γ , tyB) ty }
     → Value (lam body)
