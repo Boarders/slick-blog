@@ -207,10 +207,10 @@ data _↓_ : ∀ {Γ} {ty} → Expr Γ ty -> Expr Γ ty -> Set where
   fix-↓ : ∀ {Γ ty} {expr : Expr (Γ , ty) ty}
     -> fix expr ↓ (expr [ fix expr ])
 ```
-Here we a use call-by-value semantics and so we reduce arguments to values
+We use call-by-value semantics and so we reduce arguments to values
 before performing $\beta$-reduction. We also fix a leftmost evaluation order
 for applications. We then extend this relation to its reflective, transitive closure
-to denote the stepping relation that one expression can step to another.
+to denote the stepping relation - that one expression can reduce to another.
 
 ```agda
 data _⇓_ : ∀ {Γ ty} → Expr Γ ty → Expr Γ ty → Set where
