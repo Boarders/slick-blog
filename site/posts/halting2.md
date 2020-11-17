@@ -226,7 +226,8 @@ data _⇓_ : ∀ {Γ ty} → Expr Γ ty → Expr Γ ty → Set where
 
 Now let us think about our $\mathbf{Halt}$ term from last time. We define the notion of
 halting by saying an expression halts when there exists a value that it steps to.
-We then postulate the existence of a $\mathrm{halt}$ function with the expected properties.
+We then postulate the existence of a $\mathrm{halt}$ function with the expected properties
+in order to derive a contradiction.
 
 ```agda
 data Halt {Γ a} (e :  Expr Γ a) : Set where
@@ -243,14 +244,15 @@ postulate
   halt-ff  : ∀ {Γ ty} (e : Expr Γ ty)   → ((app halt e) ⇓ ff) → ¬ (Halt e)
 ```
 
-Here we assume we have a term $\mathrm{halt}$ which has the type of a function
-that takes an argument of any type and returns a bool. We assume that it is decidable that halt always
+We assume we have a term $\mathrm{halt}$ which has the type of a function
+that takes an argument of any type (in the meta-language) and returns a bool. 
+We also assume that it is decidable that halt always
 returns $\mathrm{tt}$ or $\mathrm{ff}$. Furthermore, the terms $\mathrm{halt-tt}$ and
 $\mathrm{halt-ff}$ encode that if $\mathrm{halt}$ returns $\mathrm{tt}$, then the term is normalizing
 and conversely, if it returns $\mathrm{ff}$, then it is non-normalizing.
 
 
-We will also define our three terms from last time:
+We can now define our three terms from last time:
 
 ```agda
 -- Since fix takes a binding term we write fix (var z)
@@ -265,7 +267,57 @@ fix-problem : ∀ {Γ} → Expr Γ 𝔹
 fix-problem = fix problem
 ```
 
-At this piont we would like to use $\mathrm{halt-ret}
+At this point we would like to use `halt-ret` on `fix-problem` but upon reflection we
+see that last time's argument was a little loose. Last time we showed that if
+`halt fix-problem` is `true` then `fix-problem` reduces to `bot` but this actually isn't
+enough to get a contradiction. What we need to know is that if a term reduces to `bot` 
+then every reduction must be divergent.
+
+A general lemma encapsulating what we need is as follows:
+```agda
+halt-⊥ : ∀ {Γ ty} {e1 e2 : Expr Γ ty} → e1 ⇓ e2 → ¬ (Halt e2) → ¬ (Halt e1)
+```
+In order to prove this would we like to say that if `e1` steps to a value
+then there is some reduction sequence where `e2` also steps to that same value.
+A more general way of stating this is confluence:
+
+**Definition [Confluence]**: A reduction relation $\rightarrow$ on a set $\mathcal{T}$ is confluent
+if for any $e1, e2, e3 \in \mathcal{T}$ there exists an $e4$ such that the following diagram
+commutes:
+    $$
+    \require{AMScd}
+    \begin{CD}
+    e1     @>>>  e2\\
+    @VVV        @VV*V\\
+    e3     @>*>>  e4
+    \end{CD}
+$$
+Here $\xrightarrow{*}$ denotes the reflective, transitive closure of $\rightarrow$.
+
+It would be outside of the scope of this post to prove confluence but it is a well-known
+result (and one which I will blog about in the future) that the lambda calculus is
+confluent. As such, we allow ourselves it as a postulate:
+```agda
+postulate
+  confluence
+    : ∀ {Γ} {a} 
+    → {e e1 e2 : Expr Γ a} 
+    → e ⇓ e1 → e ⇓ e2 
+    → Σ[ e3 ∈ Expr Γ a ] (e1 ⇓ e3) × (e2 ⇓ e3)
+```
+to do: explain Sigma syntax here and explain the below theorem
+to do: fix some of the type signatures above to be less wide.
+
+
+```agda
+⇓-val-uniq 
+  : ∀ {Γ ty} {e e' v : Expr Γ ty}
+  → Value v → e ⇓ v → e ⇓ e' → e' ⇓ v
+⇓-val-uniq pf e⇓v e⇓e' with confluence e⇓v e⇓e'
+... | Sg e3 (Sg v⇓e3 e'⇓e3) with ⇓-val pf v⇓e3
+... | refl = e'⇓e3
+```
+
 
 
 
