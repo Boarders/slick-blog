@@ -1,7 +1,7 @@
 ---
 title: "The Halting Problem (part 1)"
 author: Callan McGill
-date: "Oct 10, 2020"
+date: "Dec 4, 2020"
 tags: [Halting Problem, Haskell]
 description: Exploring the Halting problem in Haskell
 quote: \'Begin at the beginning,\' the King said, very gravely, \'and go on till you come to the end&#58; then stop.\'
@@ -29,25 +29,26 @@ Typically, the halting problem is formalised by first picking some specific theo
 and then demonstrating, within that theory, that no such halting algorithm can be written. 
 Unfortunately, the theory most often chosen is that of Turing machines. These are
 hard to formalise ([Wikipedia](https://en.wikipedia.org/wiki/Turing_machine#Formal_definition)
-informs me that "a (one-tape) Turing machine can be formally defined as a [certain] 7-tuple"!)
+informs me, for example, that "a (one-tape) Turing machine can be formally defined
+as a [certain] 7-tuple"!)
 and don't offer a particularly good foundation for programming. A Turing
-machine, after all, is _not_ a programming language and is not a very particularly good
-machine model either!
+machine, after all, is _not_ a programming language and is also not a particularly good
+virtual machine either!
 
 Instead let's take an alternative approach: we will use the lambda calculus
 as the basis for computation. The lambda calculus is both a programming language in itself
 and the foundation of all other functional languages. 
 As a testament to this idea, we will first prove halting for the lambda calculus
 and then see how the same argument looks when transplanted to Haskell. 
-Finally, in the [next post](to do) we will formalise
-the argument in Agda and fill in any lingering details we brushed aside here.
+Finally, in the [next post](https://boarders.github.io/posts/peano.html) we will formalise
+the argument in Agda and fill in most of the lingering details we brush aside here.
 
 In the setting of the lambda calculus, a precise statement of halting can be given thusly:
 
 **Theorem ($\lambda$-Halting)**: There does not exist a $\lambda$-term
 $\def\h{\mathbf{HALT}} \def\s{\text{ }} \def\L{\mathrm{L}} \def\l{\mathrm{l}} \def\true{\mathbf{true}}
 \def\false{\mathbf{false}} \h$ such that for any given lambda term
-$\L$,  $\h \text{ } \L$ evaluates to $\true$ when $\L$ terminates and false otherwise.
+$\L$,  $\h \text{ } \L$ evaluates to $\true$ when $\L$ terminates and $\false$ otherwise.
 
 Here, by termination, we mean what is otherwise called normalization. A term
 is normalizing if there exists a finite sequence of

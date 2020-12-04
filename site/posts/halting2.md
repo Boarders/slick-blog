@@ -1,7 +1,7 @@
 ---
 title: "The Halting Problem (part 2)"
 author: Callan McGill
-date: "Oct 10, 2020"
+date: "Dec 4, 2020"
 tags: [Halting Problem, Agda]
 description: Exploring the Halting problem in Agda
 quote: Everything is vague to a degree you do not realize till you have tried to make it precise.
@@ -9,8 +9,8 @@ quoteAuthor: Bertrand Russell
 
 ---
 
-In this post we are going to take the argument from [last time]( TO DO ) and formalise it in Agda.
-As always, let's grab some imports:
+In this post we are going to take the argument from [last time](https://boarders.github.io/posts/peano.html) and formalise it in Agda.
+To begin, let's grab some imports:
 
 ```agda
 module Halt where
@@ -30,27 +30,27 @@ open import Data.Sum
 ```
 
 For this development we will use a typed lambda calculus essentially identical to
-[PCF](https://en.wikipedia.org/wiki/Programming_Computable_Functions) (only with booleans over
-natural numbers), as this makes the
+[PCF](https://en.wikipedia.org/wiki/Programming_Computable_Functions) (only with booleans instead
+of natural numbers), as this makes the
 formalisation quite tidy. In order to get
 the basic semantics of the language we will closely follow the
 [DeBruijn](https://plfa.github.io/DeBruijn/)
 chapter from the fantastic [Programming Language Foundations in Agda](https://plfa.github.io/).
 
-Our language will be simply-typed, having just booleans, $\mathbb{B}$, and function types:
+Our language will be simply-typed, having only booleans, $\mathbb{B}$, and function types:
 ```agda
 data Type : Set where
   𝔹  :  Type
   _⇒_ : Type → Type → Type
 ```
 
-We make use of intrinsically well-scoped, well-typed terms and so we use proof-carrying
+We make use of intrinsically well-scoped, well-typed terms and so we use 'proof-carrying'
 de-bruijn indices for variables.
 In this set-up indices act both as an index into a typing context and as a _proof_ that
 the variable is well-typed in the current context.
 
 ```agda
--- A typing context is a represented as a list of types.
+-- A typing context is represented as a list of types.
 Con : Set
 Con = List Type
 
@@ -58,7 +58,7 @@ Con = List Type
 nil : Con
 nil = []
 
--- _,_ extends contexts to the right.
+-- _,_ extends contexts to the right as is typical in type theory.
 infixl 6 _,_
 _,_ : Con → Type → Con
 _,_ con ty = ty ∷ con
@@ -66,20 +66,20 @@ _,_ con ty = ty ∷ con
 -- A type for de-bruijn indices into a context. The index represents
 -- a pointer into a context along with a proof that the
 -- context contains the given type at that position.
--- For example given the context:
+-- For example, given the context:
 --
 --   Γ = 𝔹, 𝔹 ⇒ 𝔹
 --
 -- we have:
---   - z   : 𝔹 ⇒ 𝔹 ∈ Γ
---   - s z : 𝔹 ∈ Γ
+--    z   : 𝔹 ⇒ 𝔹 ∈ Γ
+--    s z : 𝔹 ∈ Γ
 infix 4 _∈_
 data _∈_  (t : Type) : Con → Set where
   z : ∀ {ts} → t ∈ (t ∷ ts)
   s : ∀ {r} {ts} → (t ∈ ts) → t ∈ (r ∷ ts)
 ```
 
-We can now define the terms of our language. Here $\mathrm{Expr}\;\Gamma\; \mathrm{a}$ denotes a term of type $\mathrm{a}$ in the typing context $\Gamma$:
+We can now define the terms of our language. Here `Expr Γ ty` denotes a term of type `ty` in the typing context `Γ`:
 ```agda
 data Expr (Γ : Con) : Type → Set where
   var  : ∀ {a : Type} → a ∈ Γ → Expr Γ a
@@ -91,14 +91,14 @@ data Expr (Γ : Con) : Type → Set where
   fix  : ∀ {a} → Expr (Γ , a) a → Expr Γ a
 ```
 
-The names are largely self-explanatory but we explicitly note that we are
-using $\mathrm{bool}$ for the conditional. It is also worth pointing out that
-as both $\mathrm{lam}$ and $\mathrm{fix}$ are binding forms, they take arguments
+The names are largely self-explanatory but we observe that we use `bool`
+for the conditional instead of `if`. It is also worth noting that
+as `lam` and `fix` are binding forms, they take arguments
 with contexts extended by the type of the bound variable.
 
 
-We give an identical approach to variable substitution as in PLFA by first defining context
-extension and variable renaming:
+We give an identical approach to variable substitution as in [PLFA](https://plfa.github.io/)
+by first defining context extension and variable renaming:
 
 ```agda
 ext : ∀ {Γ Δ : Con}
@@ -110,7 +110,7 @@ ext ρ (s x) = s (ρ x)   -- otherwise we perform the substitution
                         -- and take successor.
 
 -- rename is defined by structural recursion, extending the renaming
--- at binding sites and applying it when we reach variables.
+-- at binding sites and applying it to variables.
 rename : ∀ {Γ Δ}
   → (∀ {ty} → ty ∈ Γ → ty ∈ Δ)
   → (∀ {ty} → Expr Γ ty → Expr Δ ty)
@@ -126,8 +126,7 @@ rename ρ (fix body) = fix (rename (ext ρ) body)
 We then extend this from variable renamings to arbitrary context morphisms:
 
 ```agda
--- extend a context morphism to a context with another variable
--- bound.
+-- extend a context morphism by extending with a new bound variable.
 exts : ∀ {Γ Δ}
   → (∀ {ty} →  ty ∈ Γ → Expr Δ ty)
   → (∀ {ty tyB} → ty ∈ (Γ , tyB) → Expr (Δ , tyB) ty)
@@ -135,7 +134,7 @@ exts ρ z     = var z
 exts ρ (s x) = rename s (ρ x)
 
 -- Perform structural recursion, extending the context morphism at
--- binding sites and applying it when we reach variables.
+-- binding sites and applying it to variables.
 subst : ∀ {Γ Δ}
   → (∀ {ty} → ty ∈ Γ → Expr Δ ty)
   → (∀ {ty} → Expr Γ ty → Expr Δ ty)
@@ -148,10 +147,11 @@ subst ρ (bool b th el) = bool (subst ρ b) (subst ρ th) (subst ρ el)
 subst ρ (fix body) = fix (subst (exts ρ) body)
 ```
 
-This gives parallel substitution across an entire context $\Gamma$. From parallel
-substitution it is easy for us to define ordinary
-substitution of a single variable by defining a context morphism which is the
-identity on $\Gamma$ and returns the term we are substituting for the first variable:
+This gives parallel substitution across an entire context `Γ`. From that
+ it is easy for us to define ordinary substitution of a single variable
+ by defining a context morphism which is the
+identity on $\Gamma$ and returns the term we are substituting for the initial variable:
+
 ```agda
 sub : ∀ {Γ} {ty tyB} → Expr Γ tyB → ty ∈ (Γ , tyB) → Expr Γ ty
 sub term z   = term
@@ -164,12 +164,12 @@ _[_] : ∀ {Γ ty tyB}
 _[_] {Γ} {ty} {tyB} body term = subst {Γ , tyB} {Γ} (sub term) body
 ```
 
-Next we can define the values of our language, that is those terms which a program should
-return if it terminates. Along with values we give the small-step operational semantics,
-giving each possible choice of reduction that can take place within a term:
+Next we can define the values of our language - that is, those terms which terminating programs
+produce. Along with values we give a small-step operational semantics of the language, showing
+how reduction takes place:
 ```agda
 data Value : ∀ {Γ} {ty} → Expr Γ ty → Set where
-  V-↦ : ∀ {Γ } {ty tyB} {body : Expr (Γ , tyB) ty }
+  V-↦ : ∀ {Γ } {ty tyB} {body : Expr (Γ , tyB) ty}
     → Value (lam body)
   V-tt : ∀ {Γ} → Value {Γ} {𝔹} tt
   V-ff : ∀ {Γ} → Value {Γ} {𝔹} ff
@@ -207,10 +207,12 @@ data _↓_ : ∀ {Γ} {ty} → Expr Γ ty -> Expr Γ ty -> Set where
   fix-↓ : ∀ {Γ ty} {expr : Expr (Γ , ty) ty}
     -> fix expr ↓ (expr [ fix expr ])
 ```
-We use call-by-value semantics and so we reduce arguments to values
-before performing $\beta$-reduction. We also fix a leftmost evaluation order
-for applications. We then extend this relation to its reflective, transitive closure
-to denote the stepping relation - that one expression can reduce to another.
+We use (something close to) a call-by-name semantics and so don't necessarily
+reduce arguments to values before performing $\beta$-reduction. 
+We also fix a leftmost evaluation order
+for applications reducing the left argument to a value before the right argument.
+We extend this relation to its reflective, transitive closure - the stepping relation - 
+that one expression can, in some number of steps, reduce to another.
 
 ```agda
 data _⇓_ : ∀ {Γ ty} → Expr Γ ty → Expr Γ ty → Set where
@@ -223,16 +225,28 @@ data _⇓_ : ∀ {Γ ty} → Expr Γ ty → Expr Γ ty → Set where
     → M ⇓ N
     → L ⇓ N
 ```
+For later use we note, as one might expect, that values, 
+as we have defined them, only reduce to themselves:
+```agda
+⇓-val : ∀ {Γ a} {e e' : Expr Γ a} → Value e → e ⇓ e' → e' ≡ e
+⇓-val val   (_ ∎) = refl
+⇓-val V-↦  (_ →⟨ () ⟩ st)
+⇓-val V-tt (_ →⟨ () ⟩ st)
+⇓-val V-ff (_ →⟨ () ⟩ st)
+```
 
-Now let us think about our $\mathbf{Halt}$ term from last time. We define the notion of
-halting by saying an expression halts when there exists a value that it steps to.
-We then postulate the existence of a $\mathrm{halt}$ function with the expected properties
-in order to derive a contradiction.
+Now let us think about our $\mathbf{HALT}$ term from last time. We define the notion of
+halting by stating the existence of both a value and a series of reduction steps to that value.
+We encode that as follows:
 
 ```agda
 data Halt {Γ a} (e :  Expr Γ a) : Set where
   halts : ∀ {v : Expr Γ a} → (Value v) → (e ⇓ v) → Halt e
+```
 
+We are now in the position to postulate the existence of a `halt` 
+function with the expected properties:
+```
 postulate
   halt     : ∀ {Γ} {a} → Expr Γ (a ⇒ 𝔹)
   halt-sub :
@@ -250,16 +264,16 @@ postulate
     (e : Expr Γ ty) → app halt e ⇓ ff → ¬ Halt e
 ```
 
-We assume we have a function $\mathrm{halt}$ that takes an argument of any type
-(in the meta-language since our language doesn't itself have polymorphism) and returns a bool.
-That this function applies to any terms is irrelevant to the argument we give and
+We assume we have a function `halt` that takes an argument of any type
+(in the meta-language, agda, since our language doesn't itself have polymorphism) and returns a bool.
+That this function applies to terms of any type is irrelevant to the argument we give here and
 would work just as well were we to simply use `𝔹`.
 
 We also assume that it is decidable that halt always
-returns $\mathrm{tt}$ or $\mathrm{ff}$. Furthermore, the terms $\mathrm{halt}-\mathrm{tt}$ and
-$\mathrm{halt}-\mathrm{ff}$ encode our assumptions regarding $\mathrm{halt}$ - if it returns
-$\mathrm{tt}$, then the term is normalizing
-and conversely, if it returns $\mathrm{ff}$, then it is non-normalizing.
+returns `tt` or `ff`. Furthermore, the terms `halt-tt` and
+`halt-ff` encode our assumptions regarding applying the `halt` function - 
+if it returns `tt`, then the term is normalizing
+and conversely, if it returns `ff`, then it is non-normalizing.
 
 
 We can now define our three terms from last time:
@@ -281,7 +295,7 @@ At this point we would like to use `halt-ret` on `fix-problem` but upon reflecti
 see that last time's argument was a little loose. We showed that if
 `halt fix-problem` is `true` then `fix-problem` reduces to `bot` but this actually isn't
 enough, by itself, to get a contradiction. What we need to know is that if a term reduces
-to `bot` then every reduction must be divergent.
+to `bot` then every no other reduction sequence halts.
 
 A general lemma encapsulating what we need is as follows:
 ```agda
@@ -290,7 +304,7 @@ halt-⊥ :
   → e1 ⇓ e2 → ¬ (Halt e2) → ¬ (Halt e1)
 ```
 In order to prove this would we like to say that if `e1` steps to a value
-then there is some reduction sequence where `e2` also steps to that same value.
+then there exists some reduction sequence where `e2` also steps to that same value.
 This follows from the more general property of confluence:
 
 **Definition [Confluence]**: A reduction relation $\rightarrow$ on a set $\mathcal{T}$ is confluent
@@ -318,11 +332,12 @@ postulate
     → Σ[ e3 ∈ Expr Γ a ] (e1 ⇓ e3) × (e2 ⇓ e3)
 ```
 
-In the above we make use of Agda's sigma syntax. A term of the form `Σ[ x ∈ A ] P` is
-a convenient syntax agda offers for the dependent sum usually written something like
-$\Sigma_{x \in A} P$. Using confluence it is now easy to prove that if a term
-halts at a value then no matter how many other reduction steps we take to some other
-value we will still be able to reduce to a value:
+In the above we make use of Agda's sigma syntax. A term of the form 
+`Σ[ x ∈ A ] P` is a convenient syntax agda offers for the dependent sum
+traditionally written something like $\Sigma_{x \in A} P$. 
+Using confluence, it is now easy to prove that if a term
+halts at a value then no matter which reduction steps we take to some other
+term we will still be able to reduce to the same value:
 ```agda
 ⇓-val-uniq 
   : ∀ {Γ ty} {e e' v : Expr Γ ty}
@@ -331,19 +346,20 @@ value we will still be able to reduce to a value:
 ... | Sg e3 (Sg v⇓e3 e'⇓e3) with ⇓-val pf v⇓e3
 ... | refl = e'⇓e3
 ```
-From this we can conclude that "head-expansion for the property of non-termination:
+From this, we can conclude "head-expansion" for the property of non-termination:
 ```agda
 halt-⊥ : ∀ {Γ ty} {e1 e2 : Expr Γ ty} → e1 ⇓ e2 → ¬ (Halt e2) → ¬ (Halt e1)
 halt-⊥ e1⇓e2 e2-⊥ (halts v-e1 st) with ⇓-val-uniq v-e1 st e1⇓e2
 ... | e2⇓v = e2-⊥ (halts v-e1 e2⇓v)
 ```
 
-It is easy for us to show that `bot` does not terminate:
+It is easy for us to show (recursively) that `bot` does not halt:
 ```agda
 bot-non-term : ∀ {Γ ty} →  ¬ (Halt {Γ} {ty} bot)
-bot-non-term (halts v (.(fix (var z)) →⟨ fix-↓ ⟩ st)) = bot-non-term (halts v st)
+bot-non-term (halts v (.(fix (var z)) →⟨ fix-↓ ⟩ st))
+  = bot-non-term (halts v st)
 ```
-We can put together `halt-⊥` and `bot-non-term` to show that any term reducing to
+We can then put together `halt-⊥` and `bot-non-term` to show that any term that steps to
 `bot` cannot terminate:
 ```agda
 ⇓-bot-⊥ : ∀ {Γ ty} → (e : Expr Γ ty) → e ⇓ bot → ¬ Halt e
@@ -351,13 +367,13 @@ We can put together `halt-⊥` and `bot-non-term` to show that any term reducing
 ```
 
 Now the argument we would like to give is that if `halt fix-problem` reduces to `tt`
-then `fix-problem` reduces to `bot` and thus we get a contradiction. The final lemma
-we will need is a result connecting big step evaluation semantics to `bool`. We could
-conceptualise this as a more general result connecting small and big-step semantics
+then `fix-problem` reduces to `bot` and thus we get a contradiction. The final general
+result we will need concerns the big step evaluation semantics to `bool`. We could
+abstract this as a more general result connecting small and big-step semantics
 but instead we will only give the results that are useful for our purposes:
 ```agda
--- In both cases if there is no reduction then we step from if
--- and otherwise we reduce the conditional and recurse on the result.
+-- In both cases if there is no reduction then we directly step.
+-- Otherwise we reduce the conditional and recurse on the result.
 bool-stepper-tt
   : ∀ {Γ} {th el} (b : Expr Γ 𝔹) → b ⇓ tt → (bool {Γ} {𝔹} b th el) ⇓ th
 bool-stepper-tt {_} {th} {el} .tt (.tt ∎) = bool tt th el →⟨ if-tt-↓ ⟩ (th ∎)
@@ -371,14 +387,19 @@ bool-stepper-ff {_} {th} {el} b (_→⟨_⟩_ .b {M} x st)
 ```
 
 We are now in a position to show that `halt (fix-problem) ⇓ tt` gives rise to a
-contradiction which we do in a number of steps:
+contradiction which we do in a number of simple steps:
 ```agda
 -- First, we show that there is only a single way to reduce
--- fix-problem since only the fix rule applies. In order to reduce fix-problem
--- to what we expect we have to know that:
--- problem [ fix-problem ] ≡ bool (app halt fix-problem) bot tt
+-- fix-problem since only the fix rule applies. 
+-- In order to reduce fix-problem to what want
+-- we have to know that:
+--
+--   problem [ fix-problem ] ≡ bool (app halt fix-problem) bot tt
+--
 -- In order for this to be the case we need that:
--- app halt [ fix-problem ] (var z [ fix-problem ]
+-- 
+--   app (halt [ fix-problem ]) (sub fix-problem z) ≡ app halt fix0
+--
 -- and so we need that halt is a closed term. That is precisely what
 -- halt-sub gives us:
 fp-step1
