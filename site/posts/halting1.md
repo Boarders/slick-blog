@@ -26,7 +26,7 @@ True
 ```
 
 Typically, the halting problem is formalised by first picking some specific theory of computation,
-and then demonstrating, within that theory, that no such halting algorithm can be written. 
+and then demonstrating, within that theory, that no such halting algorithm can be written.
 Unfortunately, the theory typically chosen is that of Turing machines. These are
 hard to formalise ([Wikipedia](https://en.wikipedia.org/wiki/Turing_machine#Formal_definition)
 informs me, for example, that "a (one-tape) Turing machine can be formally defined
@@ -37,9 +37,9 @@ machine model either!
 
 Instead let's take an alternative approach: we will use the lambda calculus
 as the basis for computation. The lambda calculus is both a programming language in itself
-and the foundation of all other functional languages. 
+and the foundation of all other functional languages.
 As a testament to this idea, we will first prove halting for the lambda calculus
-and then see how the same argument looks when transplanted to Haskell. 
+and then see how the same argument looks when transplanted to Haskell.
 Finally, in the [next post](https://boarders.github.io/posts/halting2.html) we will formalise
 the argument in Agda and fill in most of the lingering details we brush aside here.
 
@@ -63,7 +63,7 @@ this gives a
 [semi-decision procedure](https://en.wikipedia.org/wiki/Decidability_(logic)#Semidecidability)
 for halting.
 
-Let's turn to the proof of $\lambda$-Halting. The arguments here are adapted from the introduction 
+Let's turn to the proof of $\lambda$-Halting. The arguments here are adapted from the introduction
 to
 [Computational foundations of basic recursive function theory](https://www.sciencedirect.com/science/article/pii/0304397593900858)
 by Constable and Smith. Essential to this argument is that lambda calculus
@@ -90,7 +90,7 @@ This is straightforward to see as follows:
   $$
      \begin{aligned}
       \ap{\Y}{g} \be \; &\ap{(\la{x} \ap{g}{(\ap{x}{x})})}{(\la{x} \ap{g}{(\ap{x}{x})})} \\
-                 \be \; &\ap{g}{\ap{(\la{x} \ap{g}{(\ap{x}{x})})}{(\la{x} \ap{g}{(\ap{x}{x})})}} \\
+                 \be \; &\ap{g}({\ap{(\la{x} \ap{g}{(\ap{x}{x})})}{(\la{x} \ap{g}{(\ap{x}{x})})}}) \\
         \equiv_\beta \; &\ap{g}{(\ap{Y}{g})}
     \end{aligned}$$
 
@@ -131,8 +131,8 @@ The suggestively named $\bot$ is an infinitely looping expression:
     \end{aligned}$$
 
 The term $\rm{p}$ takes any argument $\mathrm{f}$ and returns true
-if the argument doesn't terminate and otherwise loops forever. 
-We then define $\mathrm{d}$ as the fixed point of this function. 
+if the argument doesn't terminate and otherwise loops forever.
+We then define $\mathrm{d}$ as the fixed point of this function.
 With ordinary recursion we would write this as follows:
 
 $$
@@ -155,10 +155,10 @@ In slightly more detail:
        \text{if $(\ap{\h}{d})$ then $\bot$ else true} \betaStep \text{true}
       $$
       and so we get that $\rm{d}$ terminates and so we get that $\ap{\h}{d}$ is true.
-      
+
 
 Let us see how easily these concepts translate to a language like Haskell.
-Note that in Haskell all types are _partial_ (using Constable's terminology). 
+Note that in Haskell all types are _partial_ (using Constable's terminology).
 This means that every type is inhabited by some
 non-terminating term which is typically denoted $\bot$ (analogous to the term considered above).
 Reformulating the theorem with this in mind we get:
@@ -173,9 +173,9 @@ halt _ = 1
 Of course, this specification is not legal Haskell (and moreover we are claiming that no function
 can have this behaviour). This formulation may appear slightly different
 to the Halting problem insomuch as we are only considering the (partial) natural numbers, but
-we can observe that for any $\rm{f} :: \rm{Nat} \rightarrow \rm{Nat}$ we can use
-$\ap{h}{(\ap{f}{n})}$ to determine if $\rm{f}$ halts on input $\rm{n}$ and so this would
-allow us to determine on which inputs $\rm{f}$ terminates.
+we can observe that for any `f :: Nat -> Nat` we can use
+`halt (f n)` to determine if `f` halts on input `n` and so this would
+allow us to determine on which inputs `f` terminates.
 
 In order to mimic the argument above, let's use a fixed point function similar to $\Y$, aptly named
 [$\mathrm{fix}$](https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-Function.html#v:fix):
@@ -218,7 +218,7 @@ bottom :: a
 bottom = fix id
 
 p :: Natural -> Natural
-p n = if h n == 0 then 1 else bottom
+p n = if halt n == 0 then 1 else bottom
 
 d :: Natural
 d = fix p
@@ -226,18 +226,23 @@ d = fix p
 
 As above let us think about the value of $(\ap{h}{problem})$:
 ```haskell
-d ≡ fix d ≡ p d ≡ if h d == 0 then 1 else bottom
+    d
+  ≡ fix d
+  ≡ p d
+  ≡ if halt d == 0 then 1 else bottom
 ```
 
 As before:
 
-  - If $\ap{h}{d}$ is $0$ then it is 1.
-  - If $\ap{h}{d}$ is $1$ then it is 0.
+  - If `halt d` is $0$ then it is 1.
+  - If `halt d` is $1$ then it is 0.
 
 
-We therefore conclude that no such $\rm{h}$ can be written in Haskell and so we cannot tell (in general) whether a term of type $\mathrm{Natural}$ will diverge or not. We should note that there is nothing
+We therefore conclude that no such function `h` can be written in Haskell and so we cannot tell
+(in general) whether a term of type $\mathrm{Natural}$ will diverge or not. We should note that
+there is nothing
 special about $\mathrm{Natural}$ in this argument and we could have picked any type containing at
 least two distinct terms along with some ability to compare terms for equality.
 
 Thank you for reading! Hopefully this has demonstrated the unity of ideas between the lambda calculus and a functional language like
-Haskell and the naturality of studying computability theory from this perspective. In the [next post]( to do ), we will formalise this argument in Agda.
+Haskell and the naturality of studying computability theory from this perspective. In the [next post](https://boarders.github.io/posts/halting2.html), we will formalise this argument in Agda.
