@@ -12,7 +12,7 @@ quoteAuthor: Lewis Carroll, Alice in Wonderland
 The halting problem states, informally, that there is no algorithm to determine whether an _arbitrary_ program, when provided with some given input, will halt.
 Even for specific programs this can lead to interesting unsolved questions.
 A well-known example is the
-[Collatz conjecture](https://en.wikipedia.org/wiki/Collatz_conjecture), which states that the
+[Collatz conjecture](https://en.wikipedia.org/wiki/Collatz_conjecture), which states, that the
 following function halts for all inputs:
 ```haskell
 collatz :: Natural -> Bool
@@ -27,20 +27,20 @@ True
 
 Typically, the halting problem is formalised by first picking some specific theory of computation,
 and then demonstrating, within that theory, that no such halting algorithm can be written. 
-Unfortunately, the theory most often chosen is that of Turing machines. These are
+Unfortunately, the theory typically chosen is that of Turing machines. These are
 hard to formalise ([Wikipedia](https://en.wikipedia.org/wiki/Turing_machine#Formal_definition)
 informs me, for example, that "a (one-tape) Turing machine can be formally defined
 as a [certain] 7-tuple"!)
 and don't offer a particularly good foundation for programming. A Turing
 machine, after all, is _not_ a programming language and is also not a particularly good
-virtual machine either!
+machine model either!
 
 Instead let's take an alternative approach: we will use the lambda calculus
 as the basis for computation. The lambda calculus is both a programming language in itself
 and the foundation of all other functional languages. 
 As a testament to this idea, we will first prove halting for the lambda calculus
 and then see how the same argument looks when transplanted to Haskell. 
-Finally, in the [next post](https://boarders.github.io/posts/peano.html) we will formalise
+Finally, in the [next post](https://boarders.github.io/posts/halting2.html) we will formalise
 the argument in Agda and fill in most of the lingering details we brush aside here.
 
 In the setting of the lambda calculus, a precise statement of halting can be given thusly:
@@ -53,7 +53,7 @@ $\L$,  $\h \text{ } \L$ evaluates to $\true$ when $\L$ terminates and $\false$ o
 Here, by termination, we mean what is otherwise called normalization. A term
 is normalizing if there exists a finite sequence of
 [$\beta$-reductions](https://en.wikipedia.org/wiki/Lambda_calculus#%CE%B2-reduction_2)
-(which may we may perform anywhere within the term)
+(performed anywhere within the term)
 after which, the term contains no further $\beta$-redexes.
 A well-known result in the study of the lambda calculus says that a term normalizes if
 and only if it normalizes when we always pick the leftmost, outermost redex.
@@ -102,15 +102,16 @@ $$
                         \mathrm{then} \; 1 \;
                         \mathrm{else} \; n * \;\mathrm{fact} (n - 1)
 $$
-In the lambda calculus we can't refer to the variable we are defining and so instead we make use
-of a fixed point combinator:
+In the lambda calculus we can't refer to the variables we are defining in their body and so
+instead we make use of a fixed point combinator like so:
 $$
   \mathrm{fact} = \Y ( \la{f} \la{n} \mathrm{if}\; n = 0\;
                         \mathrm{then} \; 1 \;
                         \mathrm{else} \; n * f \; (n - 1))
 $$
 
-Given this, and supposing such a term $\h$ does indeed exist. Then introduce the following terms:
+Given this, and supposing we are given such a $\h$ term as above. We then introduce the
+following terms:
 
   $$
      \begin{aligned}
@@ -130,8 +131,9 @@ The suggestively named $\bot$ is an infinitely looping expression:
     \end{aligned}$$
 
 The term $\rm{p}$ takes any argument $\mathrm{f}$ and returns true
-if the argument terminates and otherwise loops forever. We then define $\mathrm{d}$ as
-the fixed point of this function. With ordinary recursion we would write this as follows:
+if the argument doesn't terminate and otherwise loops forever. 
+We then define $\mathrm{d}$ as the fixed point of this function. 
+With ordinary recursion we would write this as follows:
 
 $$
   \rm{p} = \text{if } (\ap{\h}{\rm{p}}) \text{ then } \bot \text{ else  true}
@@ -147,7 +149,7 @@ In slightly more detail:
        \text{if $(\ap{\h}{d})$ then $\bot$ else true} \betaStep \bot
      $$
     We therefore have that $\rm{d}$ does not terminate and so $\ap{\h}{d}$ must be $\rm{false}$.
-  - Simlarly if $\ap{\h}{d}$ is $\rm{false}$ then:
+  - Similarly if $\ap{\h}{d}$ is $\rm{false}$ then:
       $$
      \rm{d} \equiv_\beta \ap{p}{d} :\equiv
        \text{if $(\ap{\h}{d})$ then $\bot$ else true} \betaStep \text{true}
@@ -155,7 +157,7 @@ In slightly more detail:
       and so we get that $\rm{d}$ terminates and so we get that $\ap{\h}{d}$ is true.
       
 
-Let us see how easily this translates to a language like Haskell.
+Let us see how easily these concepts translate to a language like Haskell.
 Note that in Haskell all types are _partial_ (using Constable's terminology). 
 This means that every type is inhabited by some
 non-terminating term which is typically denoted $\bot$ (analogous to the term considered above).
@@ -168,8 +170,8 @@ halt ⊥ = 0
 halt _ = 1
 ```
 
-Of course this specification is not legal Haskell (and moreover we are claiming that no such function
-can defined which has this behaviour). This formulation may appear slightly different
+Of course, this specification is not legal Haskell (and moreover we are claiming that no function
+can have this behaviour). This formulation may appear slightly different
 to the Halting problem insomuch as we are only considering the (partial) natural numbers, but
 we can observe that for any $\rm{f} :: \rm{Nat} \rightarrow \rm{Nat}$ we can use
 $\ap{h}{(\ap{f}{n})}$ to determine if $\rm{f}$ halts on input $\rm{n}$ and so this would
@@ -184,7 +186,7 @@ fix f = let x = f x in x
 ```
 
 
-We note that $\rm{fix}$ satisies precisely the same fixed-point property as $\Y$:
+We note that $\rm{fix}$ satisfies precisely the same fixed-point property as $\Y$:
 $$
   \ap{f}{(\ap{fix}{f})} \equiv_\beta \ap{fix}{f}
   $$
@@ -201,7 +203,7 @@ sumR recFn = \case
 ```
 Then taking $\mathrm{fix}$ recovers the usual sum:
 ```haskell
-mySum :: forall n . (Num n) => ([n] -> n)
+mySum :: forall n . (Num n) => [n] -> n
 mySum = fix sumF
 ```
 ```shell
@@ -227,7 +229,7 @@ As above let us think about the value of $(\ap{h}{problem})$:
 d ≡ fix d ≡ p d ≡ if h d == 0 then 1 else bottom
 ```
 
-We note again that:
+As before:
 
   - If $\ap{h}{d}$ is $0$ then it is 1.
   - If $\ap{h}{d}$ is $1$ then it is 0.
@@ -235,9 +237,7 @@ We note again that:
 
 We therefore conclude that no such $\rm{h}$ can be written in Haskell and so we cannot tell (in general) whether a term of type $\mathrm{Natural}$ will diverge or not. We should note that there is nothing
 special about $\mathrm{Natural}$ in this argument and we could have picked any type containing at
-least two distinct terms along with some ability to compare for equality.
+least two distinct terms along with some ability to compare terms for equality.
 
-Thank you for reading! Hopefully this has demonstrated the unity of ideas between the lambda calculus and a language such as
+Thank you for reading! Hopefully this has demonstrated the unity of ideas between the lambda calculus and a functional language like
 Haskell and the naturality of studying computability theory from this perspective. In the [next post]( to do ), we will formalise this argument in Agda.
-
-

@@ -106,7 +106,7 @@ ext : ∀ {Γ Δ : Con}
   → (∀ {ty tyB : Type} → ty ∈ Γ , tyB → ty ∈ Δ , tyB)
 ext ρ z = z             -- if it is the newly bound variable
                         -- we simply return it.
-ext ρ (s x) = s (ρ x)   -- otherwise we perform the substitution 
+ext ρ (s x) = s (ρ x)   -- otherwise we perform the substitution
                         -- and take successor.
 
 -- rename is defined by structural recursion, extending the renaming
@@ -126,7 +126,7 @@ rename ρ (fix body) = fix (rename (ext ρ) body)
 We then extend this from variable renamings to arbitrary context morphisms:
 
 ```agda
--- extend a context morphism by extending with a new bound variable.
+-- extend a context morphism with a new bound variable.
 exts : ∀ {Γ Δ}
   → (∀ {ty} →  ty ∈ Γ → Expr Δ ty)
   → (∀ {ty tyB} → ty ∈ (Γ , tyB) → Expr (Δ , tyB) ty)
@@ -147,7 +147,7 @@ subst ρ (bool b th el) = bool (subst ρ b) (subst ρ th) (subst ρ el)
 subst ρ (fix body) = fix (subst (exts ρ) body)
 ```
 
-This gives parallel substitution across an entire context `Γ`. From that
+This gives parallel substitution across an entire context `Γ`. From this,
  it is easy for us to define ordinary substitution of a single variable
  by defining a context morphism which is the
 identity on $\Gamma$ and returns the term we are substituting for the initial variable:
@@ -165,13 +165,16 @@ _[_] {Γ} {ty} {tyB} body term = subst {Γ , tyB} {Γ} (sub term) body
 ```
 
 Next we can define the values of our language - that is, those terms which terminating programs
-produce. Along with values we give a small-step operational semantics of the language, showing
+return. Along with values we define the small-step operational semantics of the language, showing
 how reduction takes place:
 ```agda
 data Value : ∀ {Γ} {ty} → Expr Γ ty → Set where
+-- lambdas are values
   V-↦ : ∀ {Γ } {ty tyB} {body : Expr (Γ , tyB) ty}
     → Value (lam body)
+-- tt is a value
   V-tt : ∀ {Γ} → Value {Γ} {𝔹} tt
+-- ff is a value
   V-ff : ∀ {Γ} → Value {Γ} {𝔹} ff
 
 data _↓_ : ∀ {Γ} {ty} → Expr Γ ty -> Expr Γ ty -> Set where
@@ -208,28 +211,31 @@ data _↓_ : ∀ {Γ} {ty} → Expr Γ ty -> Expr Γ ty -> Set where
     -> fix expr ↓ (expr [ fix expr ])
 ```
 We use (something close to) a call-by-name semantics and so don't necessarily
-reduce arguments to values before performing $\beta$-reduction. 
+reduce arguments to values before performing $\beta$-reduction.
 We also fix a leftmost evaluation order
 for applications reducing the left argument to a value before the right argument.
-We extend this relation to its reflective, transitive closure - the stepping relation - 
-that one expression can, in some number of steps, reduce to another.
+We extend this relation to its reflective, transitive closure - the stepping relation -
+that one expression reduces, in some number of steps, to another.
 
 ```agda
 data _⇓_ : ∀ {Γ ty} → Expr Γ ty → Expr Γ ty → Set where
-
+-- reflexivity
   _∎ : ∀ {Γ ty} (M : Expr Γ ty)
     → M ⇓ M
-
+-- transitivity
   _→⟨_⟩_ : ∀ {Γ ty} (L : Expr Γ ty) {M N : Expr Γ ty}
     → L ↓ M
     → M ⇓ N
     → L ⇓ N
 ```
-For later use we note, as one might expect, that values, 
+For later use we note, as one might expect, that values,
 as we have defined them, only reduce to themselves:
 ```agda
 ⇓-val : ∀ {Γ a} {e e' : Expr Γ a} → Value e → e ⇓ e' → e' ≡ e
 ⇓-val val   (_ ∎) = refl
+-- In the cases where we have a transitive step Agda will
+-- produce an absurd pattern as none of the reduction
+-- rules apply.
 ⇓-val V-↦  (_ →⟨ () ⟩ st)
 ⇓-val V-tt (_ →⟨ () ⟩ st)
 ⇓-val V-ff (_ →⟨ () ⟩ st)
@@ -244,34 +250,35 @@ data Halt {Γ a} (e :  Expr Γ a) : Set where
   halts : ∀ {v : Expr Γ a} → (Value v) → (e ⇓ v) → Halt e
 ```
 
-We are now in the position to postulate the existence of a `halt` 
+We are now in the position to postulate the existence of a `halt`
 function with the expected properties:
 ```
 postulate
   halt     : ∀ {Γ} {a} → Expr Γ (a ⇒ 𝔹)
+-- halt is a closed term
   halt-sub :
     ∀ {Γ Δ} {a}
     → (ρ : ∀ {ty} → ty ∈ Γ → Expr Δ ty)
     → subst {Γ} {Δ} ρ (halt {Γ} {a}) ≡ halt {Δ}
-  halt-ret : 
-    ∀ {Γ} {ty} 
+  halt-ret :
+    ∀ {Γ} {ty}
     (e : Expr Γ ty) → app halt e ⇓ tt ⊎ app halt e ⇓ ff
-  halt-tt  : 
-    ∀ {Γ ty} 
+  halt-tt  :
+    ∀ {Γ ty}
     (e : Expr Γ ty) → app halt e ⇓ tt → Halt e
-  halt-ff : 
-    ∀ {Γ ty} 
+  halt-ff :
+    ∀ {Γ ty}
     (e : Expr Γ ty) → app halt e ⇓ ff → ¬ Halt e
 ```
 
 We assume we have a function `halt` that takes an argument of any type
 (in the meta-language, agda, since our language doesn't itself have polymorphism) and returns a bool.
-That this function applies to terms of any type is irrelevant to the argument we give here and
+That this function applies to terms of any type is irrelevant to the argument we give here which
 would work just as well were we to simply use `𝔹`.
 
 We also assume that it is decidable that halt always
 returns `tt` or `ff`. Furthermore, the terms `halt-tt` and
-`halt-ff` encode our assumptions regarding applying the `halt` function - 
+`halt-ff` encode our assumptions regarding applying the `halt` function -
 if it returns `tt`, then the term is normalizing
 and conversely, if it returns `ff`, then it is non-normalizing.
 
@@ -295,15 +302,15 @@ At this point we would like to use `halt-ret` on `fix-problem` but upon reflecti
 see that last time's argument was a little loose. We showed that if
 `halt fix-problem` is `true` then `fix-problem` reduces to `bot` but this actually isn't
 enough, by itself, to get a contradiction. What we need to know is that if a term reduces
-to `bot` then every no other reduction sequence halts.
+to `bot` then no other reduction sequence halts.
 
-A general lemma encapsulating what we need is as follows:
+Stated as a general lemma:
 ```agda
-halt-⊥ : 
-  ∀ {Γ ty} {e1 e2 : Expr Γ ty} 
+halt-⊥ :
+  ∀ {Γ ty} {e1 e2 : Expr Γ ty}
   → e1 ⇓ e2 → ¬ (Halt e2) → ¬ (Halt e1)
 ```
-In order to prove this would we like to say that if `e1` steps to a value
+In order to prove this would we like to use that if `e1` steps to a value
 then there exists some reduction sequence where `e2` also steps to that same value.
 This follows from the more general property of confluence:
 
@@ -326,34 +333,36 @@ confluent. As such, we allow ourselves to assume it as a postulate:
 ```agda
 postulate
   confluence
-    : ∀ {Γ} {a} 
-    → {e e1 e2 : Expr Γ a} 
-    → e ⇓ e1 → e ⇓ e2 
+    : ∀ {Γ} {a}
+    → {e e1 e2 : Expr Γ a}
+    → e ⇓ e1 → e ⇓ e2
     → Σ[ e3 ∈ Expr Γ a ] (e1 ⇓ e3) × (e2 ⇓ e3)
 ```
 
-In the above we make use of Agda's sigma syntax. A term of the form 
-`Σ[ x ∈ A ] P` is a convenient syntax agda offers for the dependent sum
-traditionally written something like $\Sigma_{x \in A} P$. 
+In the above we make use of Agda's sigma syntax. A term of the form
+`Σ[ x ∈ A ] P` is a convenient syntax agda offers for the dependent sum,
+traditionally written something like $\Sigma_{x \in A} P$.
 Using confluence, it is now easy to prove that if a term
 halts at a value then no matter which reduction steps we take to some other
 term we will still be able to reduce to the same value:
 ```agda
-⇓-val-uniq 
+⇓-val-uniq
   : ∀ {Γ ty} {e e' v : Expr Γ ty}
   → Value v → e ⇓ v → e ⇓ e' → e' ⇓ v
 ⇓-val-uniq pf e⇓v e⇓e' with confluence e⇓v e⇓e'
 ... | Sg e3 (Sg v⇓e3 e'⇓e3) with ⇓-val pf v⇓e3
 ... | refl = e'⇓e3
 ```
-From this, we can conclude "head-expansion" for the property of non-termination:
+From this, we can conclude the "head-expansion" property we wanted of non-termination:
 ```agda
-halt-⊥ : ∀ {Γ ty} {e1 e2 : Expr Γ ty} → e1 ⇓ e2 → ¬ (Halt e2) → ¬ (Halt e1)
+halt-⊥
+  : ∀ {Γ ty} {e1 e2 : Expr Γ ty}
+  → e1 ⇓ e2 → ¬ (Halt e2) → ¬ (Halt e1)
 halt-⊥ e1⇓e2 e2-⊥ (halts v-e1 st) with ⇓-val-uniq v-e1 st e1⇓e2
 ... | e2⇓v = e2-⊥ (halts v-e1 e2⇓v)
 ```
 
-It is easy for us to show (recursively) that `bot` does not halt:
+First, it is easy for us to show (recursively) that `bot` does not halt:
 ```agda
 bot-non-term : ∀ {Γ ty} →  ¬ (Halt {Γ} {ty} bot)
 bot-non-term (halts v (.(fix (var z)) →⟨ fix-↓ ⟩ st))
@@ -366,22 +375,27 @@ We can then put together `halt-⊥` and `bot-non-term` to show that any term tha
 ⇓-bot-⊥ e st = halt-⊥ st bot-non-term
 ```
 
-Now the argument we would like to give is that if `halt fix-problem` reduces to `tt`
+Now, we are better placed to show that if `halt fix-problem` reduces to `tt`
 then `fix-problem` reduces to `bot` and thus we get a contradiction. The final general
-result we will need concerns the big step evaluation semantics to `bool`. We could
-abstract this as a more general result connecting small and big-step semantics
+result we will need for this concerns the big step evaluation semantics to `bool`. We could
+abstract this as a more general theorem connecting small and big-step semantics
 but instead we will only give the results that are useful for our purposes:
 ```agda
 -- In both cases if there is no reduction then we directly step.
 -- Otherwise we reduce the conditional and recurse on the result.
 bool-stepper-tt
-  : ∀ {Γ} {th el} (b : Expr Γ 𝔹) → b ⇓ tt → (bool {Γ} {𝔹} b th el) ⇓ th
-bool-stepper-tt {_} {th} {el} .tt (.tt ∎) = bool tt th el →⟨ if-tt-↓ ⟩ (th ∎)
+  : ∀ {Γ} {th el} (b : Expr Γ 𝔹)
+  → b ⇓ tt → (bool {Γ} {𝔹} b th el) ⇓ th
+bool-stepper-tt {_} {th} {el} .tt (.tt ∎)
+  = bool tt th el →⟨ if-tt-↓ ⟩ (th ∎)
 bool-stepper-tt {_} {th} {el} b (_→⟨_⟩_ .b {M} x st)
   = _→⟨_⟩_ (bool b th el) (if-↓ x) (bool-stepper-tt M st)
 
-bool-stepper-ff : ∀ {Γ} {th el} (b : Expr Γ 𝔹) → b ⇓ ff → (bool {Γ} {𝔹} b th el) ⇓ el
-bool-stepper-ff {_} {th} {el} .ff (.ff ∎) = bool ff th el →⟨ if-ff-↓ ⟩ (el ∎)
+bool-stepper-ff
+  : ∀ {Γ} {th el} (b : Expr Γ 𝔹)
+  → b ⇓ ff → (bool {Γ} {𝔹} b th el) ⇓ el
+bool-stepper-ff {_} {th} {el} .ff (.ff ∎)
+  = bool ff th el →⟨ if-ff-↓ ⟩ (el ∎)
 bool-stepper-ff {_} {th} {el} b (_→⟨_⟩_ .b {M} x st)
   = _→⟨_⟩_ (bool b th el) (if-↓ x) (bool-stepper-ff M st)
 ```
@@ -390,15 +404,16 @@ We are now in a position to show that `halt (fix-problem) ⇓ tt` gives rise to 
 contradiction which we do in a number of simple steps:
 ```agda
 -- First, we show that there is only a single way to reduce
--- fix-problem since only the fix rule applies. 
+-- fix-problem since only the fix rule applies.
 -- In order to reduce fix-problem to what want
 -- we have to know that:
 --
 --   problem [ fix-problem ] ≡ bool (app halt fix-problem) bot tt
 --
 -- In order for this to be the case we need that:
--- 
---   app (halt [ fix-problem ]) (sub fix-problem z) ≡ app halt fix0
+--
+--     app (halt [ fix-problem ]) (sub fix-problem z)
+--   ≡ app halt fix-problem
 --
 -- and so we need that halt is a closed term. That is precisely what
 -- halt-sub gives us:
@@ -406,9 +421,12 @@ fp-step1
    : ∀ {Γ} {e : Expr Γ 𝔹}
    → (fix-problem {Γ}) ↓ e
    → e ≡ bool (app halt fix-problem) bot tt
-fp-step1 {Γ} fix-↓ rewrite (halt-sub {Γ , 𝔹} {Γ} {𝔹} (sub {Γ} fix-problem))  = refl
+fp-step1 {Γ} fix-↓
+  rewrite (halt-sub {Γ , 𝔹} {Γ} {𝔹} (sub {Γ} fix-problem))
+  = refl
 
--- Here we have a small lemma that we can replace equal values in the stepping relation
+-- Here we have a small lemma that we can replace
+-- equal values in the stepping relation
 ≡-↓
   : ∀ {Γ} {e e' e'' : Expr Γ 𝔹}
   → e ↓ e'
@@ -416,14 +434,16 @@ fp-step1 {Γ} fix-↓ rewrite (halt-sub {Γ , 𝔹} {Γ} {𝔹} (sub {Γ} fix-pr
   → e ↓ e''
 ≡-↓ e↓e' refl = e↓e'
 
--- We then make use of this fact and step 1 to show that fix-problem steps as we expect: 
+-- We then make use of this fact and step 1 to show
+-- that fix-problem steps as we expect:
 fp-step2
    : ∀ {Γ}
    → (fix-problem {Γ}) ↓ (bool (app halt (fix-problem)) bot tt)
-fp-step2 {Γ} = ≡-↓ (fix-↓ {Γ} {𝔹} {problem}) (fp-step1 (fix-↓ {Γ} {𝔹} {problem}))
+fp-step2 {Γ} =
+  ≡-↓ (fix-↓ {Γ} {𝔹} {problem}) (fp-step1 (fix-↓ {Γ} {𝔹} {problem}))
 
--- In the next two steps we then use an assumption and our big step lemma to show that
--- a contradiction if we assume the term halts:
+-- In the next two steps we then use our assumption and the
+-- big step lemma to derive a contradiction:
 fp-step3
    : ∀ {Γ}
    → (app (halt {Γ}) fix-problem) ⇓ tt
@@ -436,18 +456,18 @@ fp-step4
    → (fix-problem {Γ}) ⇓ bot
 fp-step4 {Γ} ⇓-tt = fix-problem →⟨ fp-step2 ⟩ fp-step3 ⇓-tt
 ```
-The other argument, assuming `halt (fix-problem) ⇓ ff` is quite a bit simpler
+The other half of the argument, assuming `halt (fix-problem) ⇓ ff`, is quite a bit simpler
 since to prove halting we only need to exhibit some particular sequence of reductions:
 ```agda
--- Here we use the big step lemma to 
 fp-step5
    : ∀ {Γ}
    → (app (halt {Γ}) fix-problem) ⇓ ff
    → (bool (app (halt {Γ}) fix-problem) bot tt) ⇓ tt
 fp-step5 ⇓-ff = bool-stepper-ff _ ⇓-ff
 
--- We make use of our substition lemma (fp-step2) to show under this assumption
--- that fix-problem big steps to ff.
+-- We make use of our substition lemma (fp-step2) to
+-- show under this assumption that fix-problem big
+-- steps to tt.
 fp-step6
    : ∀ {Γ}
    → (app (halt {Γ}) fix-problem) ⇓ ff
@@ -455,17 +475,23 @@ fp-step6
 fp-step6 ⇓-ff = fix-problem →⟨ fp-step2 ⟩ fp-step5 ⇓-ff
 ```
 
-Finally let's just package up these results into their respective contradictions:
+Finally let's package up these results into their respective contradictions:
 
 ```agda
-fix-problem-tt : ∀ {Γ} → (app (halt {Γ}) fix-problem) ⇓ tt → Halt {Γ} fix-problem → ⊥
+fix-problem-tt
+  : ∀ {Γ}
+  → (app (halt {Γ}) fix-problem) ⇓ tt
+  → Halt {Γ} fix-problem → ⊥
 fix-problem-tt ⇓-tt h = ⇓-bot-⊥ _ (fp-step4 ⇓-tt) h
 
-fix-problem-ff : ∀ {Γ} → (app (halt {Γ}) fix-problem) ⇓ ff → (¬ Halt {Γ} fix-problem) → ⊥
+fix-problem-ff
+  : ∀ {Γ}
+    → (app (halt {Γ}) fix-problem) ⇓ ff
+    → (¬ Halt {Γ} fix-problem) → ⊥
 fix-problem-ff ⇓-ff ¬h = ¬h (halts V-tt (fp-step6 ⇓-ff))
 ```
 
-and put together the contradiction:
+and put everthing together:
 ```agda
 halting : ⊥
 halting with halt-ret {nil} fix-problem
@@ -474,10 +500,8 @@ halting | inj₂ ⇓ff  = fix-problem-ff ⇓ff (halt-ff fix-problem ⇓ff)
 ```
 
 
-
 Hopefully this post has given an approachable account of formalising one of the
-central result in computability theory. On top of that we see that the
-lambda calculus as a foundation gives us something that is both readily formalisable
-and connects to a wider body of work on programming language theory.
-Thank you for reading! The full code for these examples is available
-[here](https://github.com/Boarders/agda-halting).
+central result in computability theory. We hope to have also demonstrated, from
+a programming language theory perspective, why to prefer the lambda calculus as a
+foundational theory of computation. Thank you for reading! The full code for these
+examples is available [here](https://github.com/Boarders/agda-halting).
