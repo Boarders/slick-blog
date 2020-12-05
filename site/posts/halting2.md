@@ -9,7 +9,7 @@ quoteAuthor: Bertrand Russell
 
 ---
 
-In this post we are going to take the argument from [last time](https://boarders.github.io/posts/peano.html) and formalise it in Agda.
+In this post we are going to take the argument from [last time](https://boarders.github.io/posts/halting1.html) and formalise it in Agda.
 To begin, let's grab some imports:
 
 ```agda
