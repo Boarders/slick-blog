@@ -1,5 +1,5 @@
 ---
-title: "Advent of Code (Days 1-3)"
+title: "Advent of Code 2020 (Days 1-3)"
 author: Callan McGill
 date: "Dec 3, 2020"
 tags: [Haskell, Advent of Code]
