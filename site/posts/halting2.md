@@ -20,7 +20,7 @@ open import Data.List
 open import Relation.Nullary
    using (¬_)
 open import Data.Empty
-  using (⊥; ⊥-elim)
+  using (⊥; ⊥-elim)\
 open import Data.Product
   using (Σ-syntax; _×_) renaming (_,_ to Sg)
 open import Relation.Binary.PropositionalEquality
@@ -54,11 +54,12 @@ the variable is well-typed in the current context.
 Con : Set
 Con = List Type
 
--- We use nil for the empty context.
-nil : Con
-nil = []
+-- We use ∙ for the empty context.
+∙ : Con
+∙ = []
 
--- _,_ extends contexts to the right as is typical in type theory.
+-- _,_ extends contexts to the right as is typical in type theory
+-- and so we use a view the list in reverse order.
 infixl 6 _,_
 _,_ : Con → Type → Con
 _,_ con ty = ty ∷ con
@@ -123,7 +124,11 @@ rename ρ (bool b th el) = bool (rename ρ b) (rename ρ th) (rename ρ el)
 rename ρ (fix body) = fix (rename (ext ρ) body)
 ```
 
-We then extend this from variable renamings to arbitrary context morphisms:
+Here,  a variable renaming, `(∀ {ty} → ty ∈ Γ → ty ∈ Δ)`, simply takes an index
+into one context of a particular type and gives an index into a different
+context of the same type.
+
+We extend this from variable renaming to arbitrary context morphisms:
 
 ```agda
 -- extend a context morphism with a new bound variable.
@@ -147,10 +152,34 @@ subst ρ (bool b th el) = bool (subst ρ b) (subst ρ th) (subst ρ el)
 subst ρ (fix body) = fix (subst (exts ρ) body)
 ```
 
-This gives parallel substitution across an entire context `Γ`. From this,
- it is easy for us to define ordinary substitution of a single variable
- by defining a context morphism which is the
-identity on $\Gamma$ and returns the term we are substituting for the initial variable:
+This gives parallel substitution across an entire context `Γ` to 
+another context `Δ`. Intuitively we take an open term with variables
+of type `Γ` and replace them with terms of type `Δ`. To make
+this clearer let us give an example:
+```
+-- Our example context has three 𝔹 variables. 
+con₁ : Con
+con₁ = ∙ , 𝔹 , 𝔹 , 𝔹
+
+-- Our open term is then, roughly, "if x then y else z" where
+-- x : 𝔹, y : 𝔹 and z : 𝔹
+term₁ : Expr con₁ 𝔹
+term₁ = bool (var z) (var (s z)) (var (s (s z)))
+
+-- For those variables we can then substitute closed terms:
+sub₁ : ∀ {ty} → ty ∈ con₁ → Expr ∙ ty
+sub₁ z = tt
+sub₁ (s z) = ff
+sub₁ (s (s z)) = tt
+
+-- Our parallel substitution then works as expected:
+subst-term₁ : subst sub₁ term₁ ≡ bool tt ff tt
+subst-term₁ = refl
+```
+
+From parallel substitution, it is easy for us to define ordinary substitution 
+of a single binding variable by defining a context morphism which decrements all
+variables in $\Gamma$ and returns the term we are substituting for the initial variable:
 
 ```agda
 sub : ∀ {Γ} {ty tyB} → Expr Γ tyB → ty ∈ (Γ , tyB) → Expr Γ ty
@@ -162,6 +191,24 @@ _[_] : ∀ {Γ ty tyB}
         → Expr Γ tyB
         → Expr Γ ty
 _[_] {Γ} {ty} {tyB} body term = subst {Γ , tyB} {Γ} (sub term) body
+```
+
+Again, let's give a simple example:
+```agda
+-- This time our context has n : 𝔹 ⇒ 𝔹 and b : 𝔹
+con₂  : Con
+con₂  = ∙ , 𝔹 ⇒ 𝔹 , 𝔹
+
+-- Our open term is n applied to b:
+term₂  : Expr con₂ 𝔹
+term₂  = app (var (s z)) (var z)
+
+-- Once we substitute b ↦ tt we have the smaller typing
+-- context: 
+--   ∙ , 𝔹 ⇒ 𝔹 
+-- and so we decrement the n variable.
+subst-term₂ : term₂ [ tt ] ≡ app (var z) tt
+subst-term₂ = refl
 ```
 
 Next we can define the values of our language - that is, those terms which terminating programs
@@ -405,7 +452,7 @@ contradiction which we do in a number of simple steps:
 ```agda
 -- First, we show that there is only a single way to reduce
 -- fix-problem since only the fix rule applies.
--- In order to reduce fix-problem to what want
+-- In order to reduce fix-problem to what we want
 -- we have to know that:
 --
 --   problem [ fix-problem ] ≡ bool (app halt fix-problem) bot tt
