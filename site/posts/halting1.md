@@ -1,7 +1,7 @@
 ---
 title: "The Halting Problem (part 1)"
 author: Callan McGill
-date: "Dec 4, 2020"
+date: "Dec 7, 2020"
 tags: [Halting Problem, Haskell]
 description: Exploring the Halting problem in Haskell
 quote: \'Begin at the beginning,\' the King said, very gravely, \'and go on till you come to the end&#58; then stop.\'
@@ -9,7 +9,7 @@ quoteAuthor: Lewis Carroll, Alice in Wonderland
 
 ---
 
-The halting problem states, informally, that there is no algorithm to determine whether an _arbitrary_ program, when provided with some given input, will halt.
+The halting problem states, informally, that there is no algorithm to determine whether an _arbitrary_ program (when provided with some given input) will halt.
 Even for specific programs this can lead to interesting unsolved questions.
 A well-known example is the
 [Collatz conjecture](https://en.wikipedia.org/wiki/Collatz_conjecture), which states, that the
@@ -17,7 +17,7 @@ following function halts for all inputs:
 ```haskell
 collatz :: Natural -> Bool
 collatz 1 = True
-collatz n | even n    = collatz (n `div` 2)
+collatz n | even n    = collatz (n `div` 2)]\\
 collatz n | otherwise = collatz (3 * n + 1)
 ```
 ```terminal
@@ -32,15 +32,14 @@ hard to formalise ([Wikipedia](https://en.wikipedia.org/wiki/Turing_machine#Form
 informs me, for example, that "a (one-tape) Turing machine can be formally defined
 as a [certain] 7-tuple"!)
 and don't offer a particularly good foundation for programming. A Turing
-machine, after all, is _not_ a programming language and is also not a particularly good
-machine model either!
+machine, after all, is _not_ (and was never meant to be) a programming language!
 
 Instead let's take an alternative approach: we will use the lambda calculus
 as the basis for computation. The lambda calculus is both a programming language in itself
 and the foundation of all other functional languages.
 As a testament to this idea, we will first prove halting for the lambda calculus
 and then see how the same argument looks when transplanted to Haskell.
-Finally, in the [next post](https://boarders.github.io/posts/halting2.html) we will formalise
+Finally, in [part two of this post](https://boarders.github.io/posts/halting2.html), we will formalise
 the argument in Agda and fill in most of the lingering details we brush aside here.
 
 In the setting of the lambda calculus, a precise statement of halting can be given thusly:
@@ -59,13 +58,13 @@ A well-known result in the study of the lambda calculus says that a term normali
 and only if it normalizes when we always pick the leftmost, outermost redex.
 This gives us an algorithm that will _confirm_ that a given term does indeed terminate
 but will never disconfirm whether a term loops indefinitely. In other words,
-this gives a
+there is a
 [semi-decision procedure](https://en.wikipedia.org/wiki/Decidability_(logic)#Semidecidability)
 for halting.
 
 Let's turn to the proof of $\lambda$-Halting. The arguments here are adapted from the introduction
-to
-[Computational foundations of basic recursive function theory](https://www.sciencedirect.com/science/article/pii/0304397593900858)
+to the paper
+[Computational Foundations of Basic Recursive Function Theory](https://www.sciencedirect.com/science/article/pii/0304397593900858)
 by Constable and Smith. Essential to this argument is that lambda calculus
 allows us to encode arbitrary recursive functions.
 Such recursion is performed by fixed-point combinators. We will make use of perhaps
@@ -96,7 +95,7 @@ This is straightforward to see as follows:
 
 Fixed point combinators allow us to write recursive functions. For example, supposing we
 have already [encoded](https://en.wikipedia.org/wiki/Church_encoding) Booleans and Natural numbers
-as certain lambda terms, then in a language which allowed recursive definitions we could write:
+as certain lambda terms. In a language which allowed recursive definitions we could write:
 $$
   \mathrm{fact} (n) = \mathrm{if}\; n = 0\;
                         \mathrm{then} \; 1 \;
@@ -110,7 +109,7 @@ $$
                         \mathrm{else} \; n * f \; (n - 1))
 $$
 
-Given this, and supposing we are given such a $\h$ term as above. We then introduce the
+Given this, and supposing we are given such a $\h$ term as above, we then introduce the
 following terms:
 
   $$
@@ -160,7 +159,7 @@ In slightly more detail:
 Let us see how easily these concepts translate to a language like Haskell.
 Note that in Haskell all types are _partial_ (using Constable's terminology).
 This means that every type is inhabited by some
-non-terminating term which is typically denoted $\bot$ (analogous to the term considered above).
+non-terminating term; this is typically denoted $\bot$ (analogous to the term considered above).
 Reformulating the theorem with this in mind we get:
 
 **Theorem (Haskell-Halting)**: In Haskell there is no function $\mathbf{halt}$ with the following behaviour:
@@ -174,7 +173,7 @@ Of course, this specification is not legal Haskell (and moreover we are claiming
 can have this behaviour). This formulation may appear slightly different
 to the Halting problem insomuch as we are only considering the (partial) natural numbers, but
 we can observe that for any `f :: Nat -> Nat` we can use
-`halt (f n)` to determine if `f` halts on input `n` and so this would
+`halt (f n)` to determine if `f` halts on input `n`, and so this would
 allow us to determine on which inputs `f` terminates.
 
 In order to mimic the argument above, let's use a fixed point function similar to $\Y$, aptly named
@@ -246,3 +245,6 @@ least two distinct terms along with some ability to compare terms for equality.
 
 Thank you for reading! Hopefully this has demonstrated the unity of ideas between the lambda calculus and a functional language like
 Haskell and the naturality of studying computability theory from this perspective. In the [next post](https://boarders.github.io/posts/halting2.html), we will formalise this argument in Agda.
+
+
+<i>With warmest thanks to Alixandra Prybyla and Sam Derbyshire for their valuable feedback.</i>
