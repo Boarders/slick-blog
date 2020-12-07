@@ -1,7 +1,7 @@
 ---
 title: "The Halting Problem (part 2)"
 author: Callan McGill
-date: "Dec 4, 2020"
+date: "Dec 7, 2020"
 tags: [Halting Problem, Agda]
 description: Exploring the Halting problem in Agda
 quote: Everything is vague to a degree you do not realize till you have tried to make it precise.
@@ -9,7 +9,9 @@ quoteAuthor: Bertrand Russell
 
 ---
 
-In this post we are going to take the argument from [last time](https://boarders.github.io/posts/halting1.html) and formalise it in Agda.
+[Last time](https://boarders.github.io/posts/halting1.html), we showed the undecidability of the
+halting problem using the lambda calculus as our model of computation.
+In this post, we are going to take that argument and formalise it in Agda.
 To begin, let's grab some imports:
 
 ```agda
@@ -178,8 +180,8 @@ subst-term₁ = refl
 ```
 
 From parallel substitution, it is easy for us to define ordinary substitution 
-of a single binding variable by defining a context morphism which decrements all
-variables in $\Gamma$ and returns the term we are substituting for the initial variable:
+of a single binding variable. We define the context morphism that decrements all
+variables in $\Gamma$ and returns the substituting term for the initial variable:
 
 ```agda
 sub : ∀ {Γ} {ty tyB} → Expr Γ tyB → ty ∈ (Γ , tyB) → Expr Γ ty
@@ -320,8 +322,8 @@ postulate
 
 We assume we have a function `halt` that takes an argument of any type
 (in the meta-language, agda, since our language doesn't itself have polymorphism) and returns a bool.
-That this function applies to terms of any type is irrelevant to the argument we give here which
-would work just as well were we to simply use `𝔹`.
+That this function applies to terms of any type is irrelevant to the argument we give here.
+This would work just as well were we to simply use `𝔹`.
 
 We also assume that it is decidable that halt always
 returns `tt` or `ff`. Furthermore, the terms `halt-tt` and
@@ -357,7 +359,7 @@ halt-⊥ :
   ∀ {Γ ty} {e1 e2 : Expr Γ ty}
   → e1 ⇓ e2 → ¬ (Halt e2) → ¬ (Halt e1)
 ```
-In order to prove this would we like to use that if `e1` steps to a value
+In order to prove this, we would like to use the following: if `e1` steps to a value
 then there exists some reduction sequence where `e2` also steps to that same value.
 This follows from the more general property of confluence:
 
@@ -424,9 +426,9 @@ We can then put together `halt-⊥` and `bot-non-term` to show that any term tha
 
 Now, we are better placed to show that if `halt fix-problem` reduces to `tt`
 then `fix-problem` reduces to `bot` and thus we get a contradiction. The final general
-result we will need for this concerns the big step evaluation semantics to `bool`. We could
-abstract this as a more general theorem connecting small and big-step semantics
-but instead we will only give the results that are useful for our purposes:
+result we will need is one that connects the big step operational semantics of Booleans
+to that of our conditional function, `bool`. 
+
 ```agda
 -- In both cases if there is no reduction then we directly step.
 -- Otherwise we reduce the conditional and recurse on the result.
@@ -503,8 +505,8 @@ fp-step4
    → (fix-problem {Γ}) ⇓ bot
 fp-step4 {Γ} ⇓-tt = fix-problem →⟨ fp-step2 ⟩ fp-step3 ⇓-tt
 ```
-The other half of the argument, assuming `halt (fix-problem) ⇓ ff`, is quite a bit simpler
-since to prove halting we only need to exhibit some particular sequence of reductions:
+The other half of the argument, assuming `halt (fix-problem) ⇓ ff`, is quite a bit simpler.
+To prove halting, we only need to exhibit some particular sequence of reductions:
 ```agda
 fp-step5
    : ∀ {Γ}
@@ -522,7 +524,7 @@ fp-step6
 fp-step6 ⇓-ff = fix-problem →⟨ fp-step2 ⟩ fp-step5 ⇓-ff
 ```
 
-Finally let's package up these results into their respective contradictions:
+Finally, let's package up these results into their respective contradictions:
 
 ```agda
 fix-problem-tt
@@ -538,7 +540,7 @@ fix-problem-ff
 fix-problem-ff ⇓-ff ¬h = ¬h (halts V-tt (fp-step6 ⇓-ff))
 ```
 
-and put everthing together:
+and put everything together:
 ```agda
 halting : ⊥
 halting with halt-ret {nil} fix-problem
@@ -548,7 +550,10 @@ halting | inj₂ ⇓ff  = fix-problem-ff ⇓ff (halt-ff fix-problem ⇓ff)
 
 
 Hopefully this post has given an approachable account of formalising one of the
-central result in computability theory. We hope to have also demonstrated, from
-a programming language theory perspective, why to prefer the lambda calculus as a
-foundational theory of computation. Thank you for reading! The full code for these
-examples is available [here](https://github.com/Boarders/agda-halting).
+central results in computability theory. We hope to have also demonstrated, from
+a programming language theory perspective, some of the advantages of the lambda calculus
+as a foundational theory of computation (over, for example, Turing machines). 
+Thank you for reading! The full code for this proof
+ is available [here](https://github.com/Boarders/agda-halting).
+
+<i>With warmest thanks to Alixandra Prybyla and Sam Derbyshire for their valuable feedback.</i>
