@@ -17,7 +17,7 @@ following function halts for all inputs:
 ```haskell
 collatz :: Natural -> Bool
 collatz 1 = True
-collatz n | even n    = collatz (n `div` 2)]\\
+collatz n | even n    = collatz (n `div` 2)
 collatz n | otherwise = collatz (3 * n + 1)
 ```
 ```terminal
@@ -203,7 +203,7 @@ sumR recFn = \case
 Then taking $\mathrm{fix}$ recovers the usual sum:
 ```haskell
 mySum :: forall n . (Num n) => [n] -> n
-mySum = fix sumF
+mySum = fix sumR
 ```
 ```shell
 > mySum [1..100]
