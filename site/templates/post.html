@@ -37,8 +37,13 @@
     {{#quote}}
     {{#quoteAuthor}}
     <span class="quote"> "{{quote}}"  - {{quoteAuthor}}</span>
-    {{/quoteAuthor}}          
-    {{/quote}}      
+    {{/quoteAuthor}}
+    {{/quote}}
+    {{#proofDevelopmentUrl}}
+    <div class="proof-development-link">
+        <a href="/{{proofDevelopmentUrl}}">Proof Development</a>
+    </div>
+    {{/proofDevelopmentUrl}}
     </div>
     <article class="post">
         {{{content}}}

@@ -89,6 +89,7 @@ data Post =
          , image       :: Maybe String
          , quote       :: Maybe String
          , quoteAuthor :: Maybe String
+         , agdaDevelopment :: Maybe String
          , publish     :: Bool
          }
     deriving (Generic, Eq, Ord, Show, FromJSON, ToJSON, Binary)
@@ -164,16 +165,18 @@ buildAbout  = do
   writeFile' (outputFolder </> "about.html") aboutHTML
 
 -- | Find and build all posts
-buildPosts :: Action [Post]
-buildPosts = do
+buildPosts :: [AgdaProject] -> Action [Post]
+buildPosts agdaProjects = do
   pPaths <- getDirectoryFiles "." ["site/posts//*.md"]
-  publishedPosts <- forP pPaths buildPost
+  publishedPosts <- forP pPaths (buildPost agdaProjects)
   pure (catMaybes publishedPosts)
 
 -- | Load a post, process metadata, write it to output, then return the post object
 -- Detects changes to either post content or template
-buildPost :: FilePath -> Action (Maybe Post)
-buildPost srcPath = cacheAction ("build" :: T.Text, srcPath) $ do
+buildPost :: [AgdaProject]  -- All published proof developments
+          -> FilePath
+          -> Action (Maybe Post)
+buildPost agdaProjects srcPath = cacheAction ("build" :: T.Text, srcPath) $ do
   liftIO . putStrLn $ "Rebuilding post: " <> srcPath
   postContent <- readFile' srcPath
   -- load post content and metadata as JSON blob
@@ -183,12 +186,24 @@ buildPost srcPath = cacheAction ("build" :: T.Text, srcPath) $ do
   -- Add additional metadata we've been able to compute
   let fullPostData = withSiteMeta . withPostUrl $ postData
   template <- compileTemplate' "site/templates/post.html"
-  writeFile' (outputFolder </> T.unpack postUrl) . T.unpack $ substitute template fullPostData
   post <- convert fullPostData
+
+  -- Look up Agda development and add URL if found
+  let publishedAgdaProjects = Prelude.filter (publish :: AgdaProject -> Bool) agdaProjects
+      agdaLookupMap = [(name (p :: AgdaProject), url (p :: AgdaProject)) | p <- publishedAgdaProjects]
+
+  postDataWithAgdaUrl <- case agdaDevelopment (post :: Post) of
+    Nothing -> pure fullPostData
+    Just devName -> case Prelude.lookup devName agdaLookupMap of
+      Nothing -> do
+        liftIO $ putStrLn $ "Warning: Agda development '" <> devName <> "' not found for post: " <> title (post :: Post)
+        pure fullPostData
+      Just devUrl -> pure $ fullPostData & _Object . at "proofDevelopmentUrl" ?~ A.String (T.pack devUrl)
+
   if publish (post :: Post) then
     do
       liftIO $ putStrLn $ "publishing post: " <> title (post :: Post)
-      writeFile' (outputFolder </> T.unpack postUrl) . T.unpack $ substitute template fullPostData
+      writeFile' (outputFolder </> T.unpack postUrl) . T.unpack $ substitute template postDataWithAgdaUrl
       liftIO $ putStrLn $ "here"
       pure (Just post)
   else
@@ -314,8 +329,8 @@ buildFeed posts = do
 --   defines workflow to build the website
 buildRules :: Action ()
 buildRules = do
-  allPosts <- buildPosts
   allAgdaProjects <- buildAgdaProjects
+  allPosts <- buildPosts allAgdaProjects
   buildIndex allPosts
   buildAgdaIndex allAgdaProjects
   buildAbout
