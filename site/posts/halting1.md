@@ -6,6 +6,7 @@ tags: [Halting Problem, Haskell]
 description: Exploring the Halting problem in Haskell
 quote: \'Begin at the beginning,\' the King said, very gravely, \'and go on till you come to the end&#58; then stop.\'
 quoteAuthor: Lewis Carroll, Alice in Wonderland
+publish: true
 
 ---
 

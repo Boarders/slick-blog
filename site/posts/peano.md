@@ -6,6 +6,7 @@ tags: [Agda, Natural Numbers]
 description: Explorations into characterizing natural numbers
 quote: If there is one thing in mathematics that fascinates me more than anything else (and doubtless always has), it is neither 'number' nor 'size,' but always form.
 quoteAuthor: Grothendieck
+publish: true
 
 ---
 

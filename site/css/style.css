@@ -85,9 +85,31 @@ blockquote {
     border-left: 5px solid rgba(76, 76, 76, 0.9);
     margin: auto; }
 
-ul, ol {
+ul, ol {			
   list-style-position: inside;
   margin: 1em 0 1em 2em; }
+
+#aboutUL {
+  display: inline-block;
+  text-align: left;
+	list-style-type: circle;
+	margin-bottom: 1em;
+	margin-top: 1em;
+	list-style-position: inside;
+
+}
+
+#abouttext {
+		width: 600px;
+    margin: 0 auto;
+		text-align: left;
+		margin-top: 2em;
+}
+
+.sourceCode #aboutSC {
+		margin-top: 1em;
+}
+
 
 li {
   margin-bottom: 0.7em;
@@ -118,7 +140,8 @@ header {
   /*color: $night-white;*/
   top: 0;
   height: 4em;
-  width: 100%; }
+  width: 100%;
+}
 
 footer {
   font-size: 0.8em;
@@ -486,9 +509,32 @@ a.tag, a.category {
   #theme-button:hover {
     opacity: 1; }
   .dark #theme-button {
-    color: #DDD; }
+			color: #DDD; }
 
-#beacon {
+
+.beacon {
+    background-color: #333 !important;
+    color: white !important;
+    font-family: "Oswald", helvetica, sans-serif;
+    font-size: 4em;
+    height: 1.5em;
+    width: 1.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    opacity: 0.4;
+    transition: opacity 0.5s;
+		border-radius: 2.5em;
+		margin: auto 30px;
+}
+
+.beacon:hover {
+    opacity: 1;
+}
+
+
+#beaconhome {
   font-family: "Oswald", helvetica, sans-serif;
   font-size: 4em;
   height: 1.5em;
@@ -501,17 +547,40 @@ a.tag, a.category {
   -webkit-transition: opacity 0.5s;
           transition: opacity 0.5s;
   color: inherit; }
-  #beacon path {
+  #beaconhome path {
     fill: currentColor; }
-  #beacon .logo {
+  #beaconhome .logo {
     width: 100%;
     height: 100%; }
-  #beacon:hover {
+  #beaconhome:hover {
     opacity: 1;
     text-decoration: none; }
 
+#beaconabout {
+  font-family: "Oswald", helvetica, sans-serif;
+  font-size: 4em;
+  height: 1.5em;
+  width: 1.5em;
+  text-align: center;
+  margin: 0.1em;
+  position: absolute;
+  border-radius: 0.1em;
+  opacity: 0.4;
+  -webkit-transition: opacity 0.5s;
+          transition: opacity 0.5s;
+  color: inherit; }
+  #beaconabout path {
+    fill: currentColor; }
+  #beaconabout .logo {
+    width: 100%;
+    height: 100%; }
+  #beaconabout:hover {
+    opacity: 1;
+    text-decoration: none; }	
+
+
 #home-text {
-  font-size: 0.8em;
+		font-size: 0.8em;
 }
 
 #about-text {
@@ -536,10 +605,15 @@ a.tag, a.category {
     height: 3em;
     background: rgba(76, 76, 76, 0.9); }
 
-  #beacon {
+  #beaconhome {
     color: #FFFFFC;
     font-size: 2em;
     margin: 0; }
+
+  .beacon {
+    color: #FFFFFC;
+    font-size: 2em;
+    margin: 0; }	
 
   #theme-button {
     color: #FFFFFC;
@@ -592,5 +666,19 @@ a.tag, a.category {
 .right-sidebar > * {
   margin-left: 12px;
 }
+
+.left-sidebar {
+  position: absolute;
+  top: 0.75em;
+  left: 0.7em;
+  display: flex;
+	
+}
+
+.left-sidebar > * {
+  margin-right: 12px;
+}
+
+
 
 /*# sourceMappingURL=style.css.map */

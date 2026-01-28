@@ -6,6 +6,7 @@ tags: [Halting Problem, Agda]
 description: Exploring the Halting problem in Agda
 quote: Everything is vague to a degree you do not realize till you have tried to make it precise.
 quoteAuthor: Bertrand Russell
+publish: true
 
 ---
 

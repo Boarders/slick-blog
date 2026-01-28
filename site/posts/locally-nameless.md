@@ -6,6 +6,7 @@ tags: [Type theory, Lambda Calculus]
 description: The locally nameless approach to substitution.
 quote: "Now you people have names. That's because you don't know who you are. We know who we are, so we don't need names."
 quoteAuthor: Neil Gaiman, Coraline
+publish: true
 ---
 
 

@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
@@ -17,15 +18,21 @@ import           Development.Shake.Forward
 import           Development.Shake.FilePath
 import           GHC.Generics               (Generic)
 import           Slick
+import           System.Process             (callCommand)
 
-import qualified Data.HashMap.Lazy as HML
 import qualified Data.Text                  as T
+import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Text.Pandoc.Extensions (Extension(..), extensionsFromList)
 import qualified Text.Pandoc.Options as Pandoc
 import Text.Pandoc.Highlighting
 import Slick.Pandoc (markdownToHTMLWithOpts)
-import Data.List (sortOn)
+import Data.List (sortOn, sortBy)
+import Data.Maybe (catMaybes)
 import Data.Ord (Down(..))
+
+-- Jesus aeson
+import Data.Aeson.KeyMap as KM
+
 
 
 ---Config-----------------------------------------------------------------------
@@ -34,18 +41,21 @@ siteMeta :: SiteMeta
 siteMeta =
     SiteMeta { siteAuthor = "Callan Mcgill"
              , baseUrl = "https://boarders.github.io"
-             , siteTitle = "Callan McGill"
-             , twitterHandle = Nothing
+             , siteTitle = "Callan McGillx"
+             , mathstodonHandle = Just "boarders"
              , githubUser = Just "boarders"
              }
 
+outputFolderOld :: FilePath
+outputFolderOld = "docs/"
+
 outputFolder :: FilePath
-outputFolder = "docs/"
+outputFolder = "new/"
 
 --Data models-------------------------------------------------------------------
 
 withSiteMeta :: Value -> Value
-withSiteMeta (Object obj) = Object $ HML.union obj siteMetaObj
+withSiteMeta (Object obj) = Object $ KM.union obj siteMetaObj
   where
     Object siteMetaObj = toJSON siteMeta
 withSiteMeta _ = error "only add site meta to objects"
@@ -54,7 +64,7 @@ data SiteMeta =
     SiteMeta { siteAuthor    :: String
              , baseUrl       :: String -- e.g. https://example.ca
              , siteTitle     :: String
-             , twitterHandle :: Maybe String -- Without @
+             , mathstodonHandle :: Maybe String -- Without @
              , githubUser    :: Maybe String
              }
     deriving (Generic, Eq, Ord, Show, ToJSON)
@@ -79,8 +89,55 @@ data Post =
          , image       :: Maybe String
          , quote       :: Maybe String
          , quoteAuthor :: Maybe String
+         , publish     :: Bool
          }
     deriving (Generic, Eq, Ord, Show, FromJSON, ToJSON, Binary)
+
+-- | Config file format for Agda projects
+data AgdaProjectConfig =
+    AgdaProjectConfig { configName        :: String
+                      , configRootModule  :: String
+                      , configRootFile    :: String
+                      , configDescription :: Maybe String
+                      , configPublish     :: Bool
+                      }
+    deriving (Generic, Eq, Ord, Show, Binary)
+
+instance FromJSON AgdaProjectConfig where
+  parseJSON = withObject "AgdaProjectConfig" $ \v -> AgdaProjectConfig
+    <$> v .: "name"
+    <*> v .: "rootModule"
+    <*> v .: "rootFile"
+    <*> v .:? "description"
+    <*> v .: "publish"
+
+instance ToJSON AgdaProjectConfig where
+  toJSON (AgdaProjectConfig n rm rf d p) = object
+    [ "name" A..= n
+    , "rootModule" A..= rm
+    , "rootFile" A..= rf
+    , "description" A..= d
+    , "publish" A..= p
+    ]
+
+-- | Data for an Agda project
+data AgdaProject =
+    AgdaProject { name        :: String
+                , rootModule  :: String
+                , rootFile    :: String
+                , description :: Maybe String
+                , url         :: String
+                , htmlFile    :: String
+                , projectDir  :: String
+                , publish     :: Bool
+                }
+    deriving (Generic, Eq, Ord, Show, FromJSON, ToJSON, Binary)
+
+-- | Data for the Agda projects index page
+data AgdaIndexInfo =
+  AgdaIndexInfo
+    { projects :: [AgdaProject]
+    } deriving (Generic, Show, FromJSON, ToJSON)
 
 data AtomData =
   AtomData { atomTitle    :: String
@@ -99,15 +156,23 @@ buildIndex posts' = do
       indexHTML = T.unpack $ substitute indexT (withSiteMeta $ toJSON indexInfo)
   writeFile' (outputFolder </> "index.html") indexHTML
 
+-- | Build about page
+buildAbout :: Action ()
+buildAbout  = do
+  aboutT <- compileTemplate' "site/templates/about.html"
+  let aboutHTML :: String = T.unpack $ substitute aboutT (toJSON  siteMeta)
+  writeFile' (outputFolder </> "about.html") aboutHTML
+
 -- | Find and build all posts
 buildPosts :: Action [Post]
 buildPosts = do
   pPaths <- getDirectoryFiles "." ["site/posts//*.md"]
-  forP pPaths buildPost
+  publishedPosts <- forP pPaths buildPost
+  pure (catMaybes publishedPosts)
 
 -- | Load a post, process metadata, write it to output, then return the post object
 -- Detects changes to either post content or template
-buildPost :: FilePath -> Action Post
+buildPost :: FilePath -> Action (Maybe Post)
 buildPost srcPath = cacheAction ("build" :: T.Text, srcPath) $ do
   liftIO . putStrLn $ "Rebuilding post: " <> srcPath
   postContent <- readFile' srcPath
@@ -119,7 +184,85 @@ buildPost srcPath = cacheAction ("build" :: T.Text, srcPath) $ do
   let fullPostData = withSiteMeta . withPostUrl $ postData
   template <- compileTemplate' "site/templates/post.html"
   writeFile' (outputFolder </> T.unpack postUrl) . T.unpack $ substitute template fullPostData
-  convert fullPostData
+  post <- convert fullPostData
+  if publish (post :: Post) then
+    do
+      liftIO $ putStrLn $ "publishing post: " <> title (post :: Post)
+      writeFile' (outputFolder </> T.unpack postUrl) . T.unpack $ substitute template fullPostData
+      liftIO $ putStrLn $ "here"
+      pure (Just post)
+  else
+    do
+      liftIO $ putStrLn $ "not publishing post: " <> title (post :: Post)
+      pure Nothing
+
+-- | Helper function to convert module name to HTML file name
+-- "Foo.Bar.Baz" -> "Foo.Bar.Baz.html"
+moduleToHtmlPath :: String -> String
+moduleToHtmlPath moduleName = moduleName <> ".html"
+
+-- | Find and build all Agda projects
+buildAgdaProjects :: Action [AgdaProject]
+buildAgdaProjects = do
+  configFiles <- getDirectoryFiles "." ["site/agda/*/agda-project.json"]
+  let projectDirs = fmap takeDirectory configFiles
+  publishedProjects <- forP projectDirs buildAgdaProject
+  pure (catMaybes publishedProjects)
+
+-- | Build a single Agda project
+buildAgdaProject :: FilePath -> Action (Maybe AgdaProject)
+buildAgdaProject projectPath = cacheAction ("build-agda" :: T.Text, projectPath) $ do
+  liftIO . putStrLn $ "Building Agda project: " <> projectPath
+
+  let configPath = projectPath </> "agda-project.json"
+  configExists <- doesFileExist configPath
+
+  if not configExists
+    then do
+      liftIO . putStrLn $ "Warning: No agda-project.json in " <> projectPath
+      pure Nothing
+    else do
+      configContent <- readFile' configPath
+      projectConfig <- convert (A.decode (BSL8.pack configContent) :: Maybe AgdaProjectConfig)
+
+      let projectName = takeFileName projectPath
+          htmlDir = outputFolder </> "agda" </> projectName
+          rootFilePath = projectPath </> configRootFile projectConfig
+          htmlFileName = moduleToHtmlPath (configRootModule projectConfig)
+          projectUrl = "agda/" <> projectName <> "/" <> htmlFileName
+
+      -- Run agda command to generate HTML
+      -- Run from the project directory so module names match
+      let agdaCmd = "cd " <> projectPath <> " && /Users/cmcgill21/.cabal/bin/agda --html --html-dir=../../../" <> htmlDir <> " " <> configRootFile projectConfig
+      liftIO $ callCommand agdaCmd
+
+      let project = AgdaProject
+            { name = configName projectConfig
+            , rootModule = configRootModule projectConfig
+            , rootFile = configRootFile projectConfig
+            , description = configDescription projectConfig
+            , url = projectUrl
+            , htmlFile = htmlFileName
+            , projectDir = projectName
+            , publish = configPublish projectConfig
+            }
+
+      if publish (project :: AgdaProject)
+        then do
+          liftIO $ putStrLn $ "Published Agda project: " <> name (project :: AgdaProject)
+          pure (Just project)
+        else do
+          liftIO $ putStrLn $ "Not publishing Agda project: " <> name (project :: AgdaProject)
+          pure Nothing
+
+-- | Build the Agda projects index page
+buildAgdaIndex :: [AgdaProject] -> Action ()
+buildAgdaIndex projects = do
+  indexT <- compileTemplate' "site/templates/agda-index.html"
+  let sortedProjects = sortBy (\a b -> compare (name a) (name b)) projects
+      agdaIndexInfo = AgdaIndexInfo { projects = sortedProjects }
+      indexHTML = T.unpack $ substitute indexT (withSiteMeta $ toJSON agdaIndexInfo)
+  writeFile' (outputFolder </> "agda.html") indexHTML
 
 -- | Copy all static files from the listed folders to their destination
 copyStaticFiles :: Action ()
@@ -140,10 +283,8 @@ sortPosts = sortOn (\p -> (Down  (parsedTime . date $ p, title $ p)))
   where
     parsedTime :: String -> UTCTime
     parsedTime d =
-      parseTimeOrError True defaultTimeLocale "%b %e, %Y" d :: UTCTime      
+      parseTimeOrError True defaultTimeLocale "%b %e, %Y" d :: UTCTime
 
-
-      
 
 rfc3339 :: Maybe String
 rfc3339 = Just "%H:%M:SZ"
@@ -174,7 +315,10 @@ buildFeed posts = do
 buildRules :: Action ()
 buildRules = do
   allPosts <- buildPosts
+  allAgdaProjects <- buildAgdaProjects
   buildIndex allPosts
+  buildAgdaIndex allAgdaProjects
+  buildAbout
   buildFeed allPosts
   copyStaticFiles
 

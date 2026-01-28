@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <header>
-    <nav>
-      
-      <a id="beacon" href="/">
+  <nav class="left-sidebar">
+		<a class="beacon" href="/">
           <div id="home-text"> HOME </div>
-      </a>
+    </a>
+		<a class="beacon" href="/about.html">
+          <div id="about-text"> ABOUT </div>
+      </a>		
     </nav>
     <div class="right-sidebar">
         {{#githubUser}}
@@ -13,11 +15,12 @@
         </a>
         {{/githubUser}}
 
-        {{#twitterHandle}}
-        <a class="ext-link" href="https://twitter.com/{{twitterHandle}}">
-            <img src="/images/twitter-logo.png" alt="Twitter Profile"/>
+        {{#mathstodonHandle}}
+        <a class="ext-link" href="https://mathstodon.xyz/@{{mathstodonHandle}}">
+            <img src="/images/mathstodon-logo.png" alt="Mathstodon Profile"/>
         </a>
-        {{/twitterHandle}}
+        {{/mathstodonHandle}}
+		</div>
     <script type="text/javascript" async
             src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
     </script>
