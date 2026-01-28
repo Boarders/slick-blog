@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head profile="http://www.w3.org/2005/10/profile">
+    <meta charset="UTF-8">
+    <meta name="description" content="{{siteTitle}}">
+    <meta name="author" content="{{siteAuthor}}">
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <title>{{siteTitle}}</title>
+    <link rel="icon" type="image/png" href="/images/favicon.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/syntax.css">		
+</head>
+       <body>
+    {{>site/templates/header.html}}
+<div id="page">
+            <section class="table-of-contents">
+                <h1>About Callan McGill</h1>
+								<div id="abouttext">
+								<p>
+										I am a mathematician and programmer with a penchant for:
+										<ul id="aboutUL">
+											<li> <b>mathematics</b>: <i>topos theory</i>, <i>homotopy theory</i>, <i>foundations</i>, <i>type theory</i>, <i>algebraic geometry</i> </li>
+											<li> <b>programming</b>: <i>theorem provers/dependently typed languages</i>, <i>functional programming</i>,
+												<i>programming language theory and implementation</i> </li>
+											<li> <b>philosophy</b>: <i>philosophy of mathematics</i>, <i>pragmatism</i>, <i>Dummett's program</i> </li>
+										</ul>
+										 I currently live in New York City and always welcome the chance
+										to meet new and delightful people. Feel free to reach out to me
+										via my email:
+								</p>
+								<br>
+							  <code class="sourceCode haskell">
+									> map (chr. (+ 1) . ord) "b`kk`m-lbfhkk?fl`hk-bnl"
+								</code>
+								</div>
+        </section>
+</div>
+
+{{>site/templates/footer.html}}
