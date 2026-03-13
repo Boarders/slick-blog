@@ -66,7 +66,7 @@ How can we prove that this uniquely determines the natural numbers? Our strategy
 
   Let's try to formalise this constructively in Agda. We start with a few imports we will need later:
 
-```agda
+```Agda
 module Peano where
 
 open import Relation.Binary.PropositionalEquality
@@ -77,7 +77,7 @@ open import Function
 
 Typically, we define the (unary) natural numbers as follows:
 
-```agda
+```Agda
 data ℕ : Set where
   Zero : ℕ
   Succ : ℕ -> ℕ
@@ -91,7 +91,7 @@ algebraic structures as [records](https://agda.readthedocs.io/en/v2.6.1.1/langua
 As mentioned in the introduction, since proofs are first-class, we carry around not just the
 structure of the binary relation but also the properties it satisfies:
 
-```agda
+```Agda
 record EqRel (A : Set) : Set₁ where
   field
     _≃_ : A → A → Set
@@ -108,21 +108,21 @@ The axioms this satisfies are reflexivity (that any element is equal to itself) 
 
 Let's show that Agda's built-in equality type, $\equiv$, is an equivalence relation on $\mathbb{N}$. As a brief reminder, here is how the equality type is defined, if we ignore
 [level polymorphism](https://agda.readthedocs.io/en/v2.6.1.1/language/universe-levels.html):
-```agda
+```Agda
 data _≡_ {A : Set} (x : A) : A → Set where
   refl : x ≡ x
 ```
 That is to say, we can give a term $\mathrm{refl}$ of type $\mathrm{a} \equiv \mathrm{b}$
 so long as Agda can directly compute that $\mathrm{a}$ and $\mathrm{b}$ are equal within
 the particular context. For example, if we define addition:
-```agda
+```Agda
 _+_ : ℕ -> ℕ -> ℕ
 _+_ Zero     m = m
 _+_ (Succ n) m = Succ (n + m)
 ```
 then we can give the following (unnamed) definition:
 
-```agda
+```Agda
 _ : 2 + 2 ≡ 4
 _ = refl
 ```
@@ -131,7 +131,7 @@ as Agda can compute that both sides are equal.
 Coming back to $\mathbb{N}$, let's show how $\equiv$ satisfies the properties of an equivalence
 relation:
 
-```agda
+```Agda
 ℕ-refl : ∀ {n : ℕ} → n ≡ n
 ℕ-refl = refl
 
@@ -155,7 +155,7 @@ same definitions would work to prove that _any_ set forms an equivalence relatio
 
 Now we can write an instance of EqRel for $\mathbb{N}$:
 
-```agda
+```Agda
 open EqRel {{...}} public
 
 instance
@@ -174,7 +174,7 @@ Here we use Agda's
 mechanism, the analog to Haskell's typeclass instances.
 We start by bringing the fields of EqRel into scope for those instances which can be resolved.
 This is essentially equivalent to us defining top-level functions of the form:
-```agda
+```Agda
 _≃_         : ∀ {A : Set} {{_ : EqRel A}} → A → A → Set
 reflexivity : ∀ {A : Set} {{_ : EqRel A}} {a b : A} → (a ≃ a)
 -- etc.
@@ -186,7 +186,7 @@ will infer the instance we have provided.
 
 Now we are in a position to formalise the Peano axioms. In much the same way as we have done with equivalence relations, we again use records to encode algebraic structure:
 
-```agda
+```Agda
 record Peano (N : Set) {{rel : EqRel N}} : Set₁ where
   field
     zero        : N
@@ -224,7 +224,7 @@ Several things are worth noting about this defintion:
     we add two laws that dictate how computation should unfold.
 
 Let's now prove that $\mathbb{N}$ satisfies induction and injectivity of $\mathrm{Succ}$:
-```agda
+```Agda
 ℕ-induction :
   ∀ (P : ℕ → Set) (a : ℕ)
   → (P Zero)
@@ -262,7 +262,7 @@ we have defined $\mathbb{N}$-$\mathrm{induction}$.
 
   Now, suppose $\mathsf{N}$ is a set satisfying the Peano axioms, we want to then define
 functions to and from $\mathbb{N}$:
-```agda
+```Agda
 
 from-ℕ : ∀ {N : Set} {{_ : EqRel N}} → {{ _ : Peano N}} → ℕ → N
 from-ℕ {N} n = induction (λ _ -> N) n zero succ
@@ -279,7 +279,7 @@ to compute. Since the dependent types in question are constant, induction simply
 
 Now we can show these maps form equivalences. To get a flavour let
 us step through the development for the first equality:
-```agda
+```Agda
 to∘from :
   ∀ {N : Set} {{ _ : EqRel N }} → {{peano : Peano N}}
   → (n : ℕ) → to-ℕ {N} (from-ℕ n) ≡ n
@@ -303,7 +303,7 @@ N     : Set      (not in scope)
 
 We can see that in order for $\mathbb{N}$-$\mathrm{induction}$ to make progress we need to split
 on $\mathrm{n}$:
-```agda
+```Agda
 to∘from :
   ∀ {N : Set} {{ _ : EqRel N }} → {{peano : Peano N}}
   → (n : ℕ) → to-ℕ {N} (from-ℕ n) ≡ n
@@ -318,7 +318,7 @@ Goal: Peano.induction peano (λ _ → ℕ) (Peano.zero peano) 0 Succ ≡ 0
 But this is precisely our $\mathrm{induction}$-$\mathrm{zero}$ principle! Similarly we can
 now use the $\mathrm{induction}$-$\mathrm{succ}$ principle in the second case and then recurse
 giving us:
-```agda
+```Agda
 to∘from :
   ∀ {N : Set} {{ _ : EqRel N }} → {{peano : Peano N}}
   → (n : ℕ) → to-ℕ {N} (from-ℕ n) ≡ n
@@ -340,7 +340,7 @@ construction as it didn't seem to cooperate with a less verbose alternative.
 The other proof is similarly a case of following our nose (or rather following the
 typechecker). We first remind ourselves of some equality principles we have imported
 above (again simplifying away level polymorphism):
-```agda
+```Agda
 -- Funtions preserve equality:
 cong
   : {A : Set} {B : Set} (f : A → B) {x y : A}
@@ -350,13 +350,13 @@ cong
 trans : ∀ {a b c : A} → a ≡ b → b ≡ c → a ≡ c
 ```
 We also will need the fact that we can lift any propositional equality into an equivalence relation:
-```agda
+```Agda
 liftEq : ∀ {A : Set}  {{r : EqRel A}} → {a b : A} → a ≡ b → (a ≃ b)
 liftEq refl = reflexivity
 ```
 
 With these can now give the proof:
-```agda
+```Agda
 
 from∘to :
   ∀ {N : Set}{{ rel : EqRel N}} → {{peano : Peano N}} → (n : N) →
@@ -441,7 +441,7 @@ a _unique_ map from the discrete dynamical system
 $\left( \mathbb{N}\; , \; 0 : \mathbb{N}\; ,\; \mathrm{s}\; : \; \mathbb{N} \rightarrow \mathbb{N}\right)$.
 
 Let us phrase this idea in terms of language more familiar to functional programmers. First define a "pattern functor" for $\mathbb{N}$:
-```agda
+```Agda
 data NatP (r : Set) : Set where
   ZeroP : NatP r
   SuccP : r → NatP r
@@ -449,7 +449,7 @@ data NatP (r : Set) : Set where
 This has the same shape as $\mathbb{N}$ but we leave the recursion open (this same pattern
 of open recursion is the animating idea behind [recursion schemes](https://hackage.haskell.org/package/recursion-schemes)).
 We can show that this is a functor (we don't worry about the functor laws):
-```agda
+```Agda
 record Functor (F : Set → Set) : Set₁ where
   constructor Func
   field
@@ -470,14 +470,14 @@ Functional programmers might recognise that the discrete dynamical systems discu
 in fact
 [$\mathrm{F}$-algebras](https://en.wikipedia.org/wiki/F-algebra)
 for this pattern functor, which we define as follows:
-```agda
+```Agda
 record Alg (F : Set → Set) (A : Set) : Set where
   field
     μ : F A → A
 open Alg {{...}} public
 ```
 In particular if we define discrete dynamical systems:
-```agda
+```Agda
 record Dyn (A : Set) : Set where
   constructor D
   field
@@ -485,7 +485,7 @@ record Dyn (A : Set) : Set where
     self-map  : A → A
 ```
 then we can show then any dynamical system gives rise to an algebra:
-```agda
+```Agda
 from-Dyn : ∀ {A : Set} → Dyn A → Alg NatP A
 from-Dyn {A} (D basepoint self-map) = record { μ = alg }
   where
@@ -499,7 +499,7 @@ algebra structures on $\mathrm{A}$ and discrete dynamical system structures (an 
 we can upgrade to an isomorphism between the respective categories).
 
 Let's give the algebra structure for $\mathbb{N}$:
-```agda
+```Agda
 instance
   ℕ-Alg : Alg NatP ℕ
   ℕ-Alg = record { μ = alg }
@@ -528,7 +528,7 @@ $$
 f \circ \mu_{A} \equiv \mu_{B} \circ (F f)
 $$
 
-```agda
+```Agda
 record Alg-Homo (A B : Set) {F : Set → Set} {{f : Functor F}}
   (FA : Alg F A) (FB : Alg F B) : Set₁ where
   constructor AlgHom
@@ -541,7 +541,7 @@ record Alg-Homo (A B : Set) {F : Set → Set} {{f : Functor F}}
 
 Now we can try to prove that the algebra structure on $\mathbb{N}$ is initial. We first show there
 is an induced map to every other $\mathrm{F}$-$\mathrm{algebra}$:
-```agda
+```Agda
 ℕ-weakly-initial
   : ∀ {A : Set}
   → {{FA : Alg NatP A}}
@@ -563,7 +563,7 @@ first case split as this is how $\mathrm{init}$-$\mathbb{N}$ is defined. At this
 can see that the laws hold definitionally from how we have defined the map.
 
 We can then show uniqueness:
-```agda
+```Agda
 ℕ-init-uniq :
   ∀ {A : Set}
   → {{FA : Alg NatP A}}
@@ -590,17 +590,17 @@ We can then show uniqueness:
 We don't infer algebra homomorphisms and so we need to pass them as arguments and
 open the various records to bring their fields into scope.
 In the first case we have the following goal:
-```agda
+```Agda
 →-fun 0 ≡ μ ZeroP
 ```
 We note that this is definitionally equivalent to showing:
-```agda
+```Agda
 →-fun (μ ZeroP) ≡ μ (Arr →-fun ZeroP)
 ```
 and this is the $\mu$-$\mathrm{comm}$ law!
 
 In the successor case we have to prove:
-```agda
+```Agda
 →-fun (Succ n) ≡ μ (SuccP (Alg-Homo.→-fun ℕ-weakly-initial n))
 ```
 
@@ -610,7 +610,7 @@ $\mu$-$\mathrm{comm}$ law. At that point (as before) we can rewrite the inner pa
 One nice thing about this characterization (beyond being much simpler to reason about!) is that
 the same idea of initial algebra semantics works just as well for any algebraic data type.
 For example we can do exactly the same for lists as we have for $\mathbb{N}$:
-```agda
+```Agda
 data ListP (A : Set) (r : Set) : Set where
   NilP  : ListP A r
   ConsP : A → r → ListP A r
