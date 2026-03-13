@@ -42,4 +42,65 @@ if (getCookie('theme')=='night') {
 
 // Switch theme if button is clicked.
 var button = document.getElementById("theme-button");
-button.addEventListener('click', switchTheme);
+if (button) {
+    button.addEventListener('click', switchTheme);
+}
+
+// Footnote popup functionality
+(function() {
+    function initFootnotes() {
+        var footnoteRefs = document.querySelectorAll('a.footnote-ref');
+        var popup = null;
+
+        footnoteRefs.forEach(function(ref) {
+            ref.addEventListener('mouseenter', function(e) {
+                // Remove any existing popup
+                if (popup && popup.parentNode) {
+                    popup.parentNode.removeChild(popup);
+                    popup = null;
+                }
+
+                var footnoteId = ref.getAttribute('href').substring(1);
+                var footnoteContent = document.getElementById(footnoteId);
+
+                if (footnoteContent) {
+                    // Create popup
+                    popup = document.createElement('div');
+                    popup.className = 'footnote-popup';
+
+                    // Clone the content but remove the back link
+                    var content = footnoteContent.cloneNode(true);
+                    var backLink = content.querySelector('.footnote-back');
+                    if (backLink && backLink.parentNode) {
+                        backLink.parentNode.removeChild(backLink);
+                    }
+
+                    // Get just the text content
+                    var textContent = content.textContent || content.innerText;
+                    popup.textContent = textContent.trim();
+
+                    // Position popup
+                    var rect = ref.getBoundingClientRect();
+                    popup.style.position = 'absolute';
+                    popup.style.left = rect.left + window.pageXOffset + 'px';
+                    popup.style.top = (rect.bottom + window.pageYOffset + 5) + 'px';
+
+                    document.body.appendChild(popup);
+                }
+            });
+
+            ref.addEventListener('mouseleave', function() {
+                if (popup && popup.parentNode) {
+                    popup.parentNode.removeChild(popup);
+                    popup = null;
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initFootnotes);
+    } else {
+        initFootnotes();
+    }
+})();
