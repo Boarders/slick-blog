@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot  #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
@@ -201,8 +202,8 @@ buildPost agdaProjects agdaLinkMap srcPath = cacheAction ("build" :: T.Text, src
   post <- convert fullPostData
 
   -- Look up Agda development and add URL if found
-  let publishedAgdaProjects = Prelude.filter (publish :: AgdaProject -> Bool) agdaProjects
-      agdaLookupMap = [(name (p :: AgdaProject), url (p :: AgdaProject)) | p <- publishedAgdaProjects]
+  let publishedAgdaProjects = Prelude.filter (.publish) agdaProjects
+      agdaLookupMap = [(p.name, p.url) | p <- publishedAgdaProjects]
 
   postDataWithAgdaUrl <- case agdaDevelopment (post :: Post) of
     Nothing -> pure fullPostData
@@ -212,7 +213,7 @@ buildPost agdaProjects agdaLinkMap srcPath = cacheAction ("build" :: T.Text, src
         pure fullPostData
       Just devUrl -> pure $ fullPostData & _Object . at "proofDevelopmentUrl" ?~ A.String (T.pack devUrl)
 
-  if publish (post :: Post) then
+  if post.publish then
     do
       liftIO $ putStrLn $ "publishing post: " <> title (post :: Post)
       writeFile' (outputFolder </> T.unpack postUrl) . T.unpack $ substitute template postDataWithAgdaUrl
@@ -279,7 +280,7 @@ buildAgdaProject projectPath = do
             , publish = configPublish projectConfig
             }
 
-      if publish (project :: AgdaProject)
+      if project.publish
         then do
           when htmlExists $
             liftIO $ putStrLn $ "Using cached Agda project: " <> name (project :: AgdaProject)
@@ -546,6 +547,6 @@ writerOptions = Pandoc.def
       Pandoc.writerExtensions = pandocExtensions
     , -- We want to have hightlighting by default, to be compatible with earlier
       -- Hakyll releases
-      Pandoc.writerHighlightStyle = Just pygments
+      Pandoc.writerHighlightMethod = Pandoc.Skylighting pygments
     , Pandoc.writerHTMLMathMethod = Pandoc.MathJax ""
     }
