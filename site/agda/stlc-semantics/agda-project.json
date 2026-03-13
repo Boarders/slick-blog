@@ -1,0 +1,6 @@
+{
+  "name": "STLC semantics",
+  "rootModule": "STLC",
+  "rootFile": "STLC.agda",
+  "publish": true
+}
