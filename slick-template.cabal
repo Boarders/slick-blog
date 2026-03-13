@@ -30,6 +30,7 @@ source-repository head
 executable build-site
   main-is: Main.hs
   other-modules:
+      AgdaSyntaxHighlighting
       Paths_slick_template
   hs-source-dirs:
       app
@@ -41,8 +42,11 @@ executable build-site
     , containers
     , lens
     , lens-aeson
+    , mtl
     , pandoc
+    , pandoc-types
     , process
+    , regex-tdfa
     , shake
     , slick
     , text
