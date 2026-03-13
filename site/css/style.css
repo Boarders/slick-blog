@@ -58,9 +58,14 @@ h2 {
   padding: 1em 0 0 0; }
 
 h3 {
-  font-size: 1.4em;
-  margin: 0.5em 0;
-  text-align: center; }
+  font-family: "Quicksand", helvetica, sans-serif;
+  font-size: 1.05em;
+  margin: 1.5em 0 0.5em 0;
+  padding: 0.5em 0.8em;
+  text-align: left;
+  border: 1px solid #777;
+  display: inline-block;
+  width: fit-content; }
 
 blockquote {
   width: 90%;
@@ -118,8 +123,12 @@ li {
 
 
 em {
+  font-style: italic;
+  font-weight: inherit; }
+
+strong {
   font-weight: bold;
-  font-style: italic; }
+  font-style: inherit; }
 
 img {
     margin: auto; }
@@ -335,6 +344,10 @@ a.tag, a.category {
     font-size: 8em;
     line-height: 0.1em;
     padding-right: 0.06em; }
+  .post > p.no-dropcap:first-letter {
+    font-size: inherit;
+    line-height: inherit;
+    padding-right: inherit; }
   .post ul {
     list-style-type: disc;
     text-indent: -1em; }
@@ -697,6 +710,56 @@ a.tag, a.category {
 
 .left-sidebar > * {
   margin-right: 12px;
+}
+
+/* Footnote styling */
+.footnote-popup {
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 10px 15px;
+  max-width: 400px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  color: #f5f5f5;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.footnote-popup p {
+  margin: 0;
+}
+
+a.footnote-ref {
+  text-decoration: none;
+  color: #7ec4cf;
+  font-size: 0.85em;
+  vertical-align: super;
+  padding: 0 2px;
+}
+
+a.footnote-ref:hover {
+  text-decoration: underline;
+}
+
+.footnotes {
+  margin-top: 3em;
+  padding-top: 1em;
+  border-top: 1px solid #555;
+  font-size: 0.9em;
+}
+
+.footnotes ol {
+  padding-left: 2em;
+}
+
+.footnotes li {
+  margin-bottom: 0;
+}
+
+.footnotes li p {
+  display: inline;
+  margin: 0;
 }
 
 
