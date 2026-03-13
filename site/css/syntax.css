@@ -1,3 +1,4 @@
+/* Default syntax highlighting for all code blocks */
 pre {
     background-color: null;
 }
@@ -8,26 +9,117 @@ code {
     font-family: monospace, monospace;
 }
 
-/* KeyWordTok */
+/* Default highlighting for non-Agda code */
 .sourceCode .kw { color: #87e8c1; }
-/* DataTypeTok */
 .sourceCode .dt { color: #1c9ffc; }
-
-/* DecValTok (decimal value), BaseNTok, FloatTok */
 .sourceCode .dv { color: #f5f5f5; }
 .sourceCode .bn { color: #f5f5f5; }
 .sourceCode .fl { color: #f5f5f5; }
-/* CharTok */
 .sourceCode .ch { color: #f5f5f5; }
-/* StringTok */
 .sourceCode .st { color: #4e9aa6; }
-/* CommentTok */
 .sourceCode .co { color: #7d9091; }
-/* OtherTok */ /* FunctionTok */
-.sourceCode .ot, sourceCode .fu: { color: #f5f5f5; }
-/* AlertTok */
+.sourceCode .ot { color: #f5f5f5; }
+.sourceCode .fu { color: #f5f5f5; }
 .sourceCode .al { color: #ef2929; font-weight: bold; }
-/* RegionMarkerTok */
-.sourceCode .re { }
-/* ErrorTok */
 .sourceCode .er { color: #a40000; font-weight: bold; }
+
+/* ========================================== */
+/* Agda-specific syntax highlighting         */
+/* Warm color palette for dark backgrounds   */
+/* ========================================== */
+
+/* Keywords (module, where, data, open, import, record, field, etc.) - Warm orange */
+.sourceCode.agda .kw {
+    color: #ff9d5c;
+    font-weight: normal;
+}
+
+/* Data types (Set, Set₁, Type, ℕ, etc.) - Bright cyan/aqua */
+.sourceCode.agda .dt {
+    color: #5ccfe6;
+    font-weight: normal;
+}
+
+/* Operators and symbols (:, →, ×, _, etc.) - Soft coral */
+.sourceCode.agda .ot {
+    color: #e0af68;
+}
+
+/* Function names - Soft purple/lavender */
+.sourceCode.agda .fu {
+    color: #bb9af7;
+}
+
+/* Comments - Muted warm gray */
+.sourceCode.agda .co {
+    color: #a89984;
+    font-style: italic;
+}
+
+/* Pragmas ({-# ... #-}) - Yellow/gold */
+.sourceCode.agda .pp {
+    color: #e5c07b;
+}
+
+/* Numbers - Bright pink/magenta */
+.sourceCode.agda .dv,
+.sourceCode.agda .bn,
+.sourceCode.agda .fl {
+    color: #ff79c6;
+}
+
+/* Strings - Warm green */
+.sourceCode.agda .st,
+.sourceCode.agda .ch {
+    color: #b5cea8;
+}
+
+/* Variables and identifiers - Light cream/off-white */
+.sourceCode.agda .va {
+    color: #f5f5f5;
+}
+
+/* Constructors (Zero, Succ, refl, etc.) - Bright lime green */
+.sourceCode.agda .cn {
+    color: #9ece6a;
+}
+
+/* Function definitions - Bold lavender */
+.sourceCode.agda dfn {
+    color: #bb9af7;
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* Constructors (Zero, Succ, refl, etc.) - Warm peach/amber */
+.sourceCode.agda .constructor {
+    color: #ffb86c;
+    font-weight: normal;
+}
+
+/* Errors - Bright red */
+.sourceCode.agda .er {
+    color: #f7768e;
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+/* Alerts - Warm red */
+.sourceCode.agda .al {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+/* ========================================== */
+/* MathJax styling                           */
+/* ========================================== */
+
+/* Inline math - Soft peach */
+.math.inline {
+    color: #ffcba4;
+}
+
+/* Display math - Soft peach */
+.math.display {
+    color: #ffcba4;
+}
