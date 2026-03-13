@@ -15,7 +15,7 @@ halting problem using the lambda calculus as our model of computation.
 In this post, we are going to take that argument and formalise it in Agda.
 To begin, let's grab some imports:
 
-```agda
+```Agda
 module Halt where
 
 open import Data.List
@@ -41,7 +41,7 @@ the basic semantics of the language we will closely follow the
 chapter from the fantastic [Programming Language Foundations in Agda](https://plfa.github.io/).
 
 Our language will be simply-typed, having only booleans, $\mathbb{B}$, and function types:
-```agda
+```Agda
 data Type : Set where
   𝔹  :  Type
   _⇒_ : Type → Type → Type
@@ -52,7 +52,7 @@ de-bruijn indices for variables.
 In this set-up indices act both as an index into a typing context and as a _proof_ that
 the variable is well-typed in the current context.
 
-```agda
+```Agda
 -- A typing context is represented as a list of types.
 Con : Set
 Con = List Type
@@ -84,7 +84,7 @@ data _∈_  (t : Type) : Con → Set where
 ```
 
 We can now define the terms of our language. Here `Expr Γ ty` denotes a term of type `ty` in the typing context `Γ`:
-```agda
+```Agda
 data Expr (Γ : Con) : Type → Set where
   var  : ∀ {a : Type} → a ∈ Γ → Expr Γ a
   app  : ∀ {a b} → Expr Γ (a ⇒ b) → Expr Γ a → Expr Γ b
@@ -104,7 +104,7 @@ with contexts extended by the type of the bound variable.
 We give an identical approach to variable substitution as in [PLFA](https://plfa.github.io/)
 by first defining context extension and variable renaming:
 
-```agda
+```Agda
 ext : ∀ {Γ Δ : Con}
   → (∀ {ty : Type} → ty ∈ Γ → ty ∈ Δ)
   → (∀ {ty tyB : Type} → ty ∈ Γ , tyB → ty ∈ Δ , tyB)
@@ -133,7 +133,7 @@ context of the same type.
 
 We extend this from variable renaming to arbitrary context morphisms:
 
-```agda
+```Agda
 -- extend a context morphism with a new bound variable.
 exts : ∀ {Γ Δ}
   → (∀ {ty} →  ty ∈ Γ → Expr Δ ty)
@@ -184,7 +184,7 @@ From parallel substitution, it is easy for us to define ordinary substitution
 of a single binding variable. We define the context morphism that decrements all
 variables in $\Gamma$ and returns the substituting term for the initial variable:
 
-```agda
+```Agda
 sub : ∀ {Γ} {ty tyB} → Expr Γ tyB → ty ∈ (Γ , tyB) → Expr Γ ty
 sub term z   = term
 sub _ (s pf) = var pf
@@ -197,7 +197,7 @@ _[_] {Γ} {ty} {tyB} body term = subst {Γ , tyB} {Γ} (sub term) body
 ```
 
 Again, let's give a simple example:
-```agda
+```Agda
 -- This time our context has n : 𝔹 ⇒ 𝔹 and b : 𝔹
 con₂  : Con
 con₂  = ∙ , 𝔹 ⇒ 𝔹 , 𝔹
@@ -217,7 +217,7 @@ subst-term₂ = refl
 Next we can define the values of our language - that is, those terms which terminating programs
 return. Along with values we define the small-step operational semantics of the language, showing
 how reduction takes place:
-```agda
+```Agda
 data Value : ∀ {Γ} {ty} → Expr Γ ty → Set where
 -- lambdas are values
   V-↦ : ∀ {Γ } {ty tyB} {body : Expr (Γ , tyB) ty}
@@ -267,7 +267,7 @@ for applications reducing the left argument to a value before the right argument
 We extend this relation to its reflective, transitive closure - the stepping relation -
 that one expression reduces, in some number of steps, to another.
 
-```agda
+```Agda
 data _⇓_ : ∀ {Γ ty} → Expr Γ ty → Expr Γ ty → Set where
 -- reflexivity
   _∎ : ∀ {Γ ty} (M : Expr Γ ty)
@@ -280,7 +280,7 @@ data _⇓_ : ∀ {Γ ty} → Expr Γ ty → Expr Γ ty → Set where
 ```
 For later use we note, as one might expect, that values,
 as we have defined them, only reduce to themselves:
-```agda
+```Agda
 ⇓-val : ∀ {Γ a} {e e' : Expr Γ a} → Value e → e ⇓ e' → e' ≡ e
 ⇓-val val   (_ ∎) = refl
 -- In the cases where we have a transitive step Agda will
@@ -295,7 +295,7 @@ Now let us think about our $\mathbf{HALT}$ term from last time. We define the no
 halting by stating the existence of both a value and a series of reduction steps to that value.
 We encode that as follows:
 
-```agda
+```Agda
 data Halt {Γ a} (e :  Expr Γ a) : Set where
   halts : ∀ {v : Expr Γ a} → (Value v) → (e ⇓ v) → Halt e
 ```
@@ -335,7 +335,7 @@ and conversely, if it returns `ff`, then it is non-normalizing.
 
 We can now define our three terms from last time:
 
-```agda
+```Agda
 -- Since fix takes a binding term we write fix (var z)
 -- instead of the term fix (lam z) we used last time.
 bot : ∀ {ty Γ} → Expr Γ ty
@@ -355,7 +355,7 @@ enough, by itself, to get a contradiction. What we need to know is that if a ter
 to `bot` then no other reduction sequence halts.
 
 Stated as a general lemma:
-```agda
+```Agda
 halt-⊥ :
   ∀ {Γ ty} {e1 e2 : Expr Γ ty}
   → e1 ⇓ e2 → ¬ (Halt e2) → ¬ (Halt e1)
@@ -380,7 +380,7 @@ Here $\xrightarrow{*}$ denotes the reflective, transitive closure of $\rightarro
 It would be outside of the scope of this post to prove confluence but it is a well-known
 result (and one which I will blog about in the future) that the lambda calculus is
 confluent. As such, we allow ourselves to assume it as a postulate:
-```agda
+```Agda
 postulate
   confluence
     : ∀ {Γ} {a}
@@ -395,7 +395,7 @@ traditionally written something like $\Sigma_{x \in A} P$.
 Using confluence, it is now easy to prove that if a term
 halts at a value then no matter which reduction steps we take to some other
 term we will still be able to reduce to the same value:
-```agda
+```Agda
 ⇓-val-uniq
   : ∀ {Γ ty} {e e' v : Expr Γ ty}
   → Value v → e ⇓ v → e ⇓ e' → e' ⇓ v
@@ -404,7 +404,7 @@ term we will still be able to reduce to the same value:
 ... | refl = e'⇓e3
 ```
 From this, we can conclude the "head-expansion" property we wanted of non-termination:
-```agda
+```Agda
 halt-⊥
   : ∀ {Γ ty} {e1 e2 : Expr Γ ty}
   → e1 ⇓ e2 → ¬ (Halt e2) → ¬ (Halt e1)
@@ -413,14 +413,14 @@ halt-⊥ e1⇓e2 e2-⊥ (halts v-e1 st) with ⇓-val-uniq v-e1 st e1⇓e2
 ```
 
 First, it is easy for us to show (recursively) that `bot` does not halt:
-```agda
+```Agda
 bot-non-term : ∀ {Γ ty} →  ¬ (Halt {Γ} {ty} bot)
 bot-non-term (halts v (.(fix (var z)) →⟨ fix-↓ ⟩ st))
   = bot-non-term (halts v st)
 ```
 We can then put together `halt-⊥` and `bot-non-term` to show that any term that steps to
 `bot` cannot terminate:
-```agda
+```Agda
 ⇓-bot-⊥ : ∀ {Γ ty} → (e : Expr Γ ty) → e ⇓ bot → ¬ Halt e
 ⇓-bot-⊥ e st = halt-⊥ st bot-non-term
 ```
@@ -430,7 +430,7 @@ then `fix-problem` reduces to `bot` and thus we get a contradiction. The final g
 result we will need is one that connects the big step operational semantics of Booleans
 to that of our conditional function, `bool`. 
 
-```agda
+```Agda
 -- In both cases if there is no reduction then we directly step.
 -- Otherwise we reduce the conditional and recurse on the result.
 bool-stepper-tt
@@ -452,7 +452,7 @@ bool-stepper-ff {_} {th} {el} b (_→⟨_⟩_ .b {M} x st)
 
 We are now in a position to show that `halt (fix-problem) ⇓ tt` gives rise to a
 contradiction which we do in a number of simple steps:
-```agda
+```Agda
 -- First, we show that there is only a single way to reduce
 -- fix-problem since only the fix rule applies.
 -- In order to reduce fix-problem to what we want
@@ -508,7 +508,7 @@ fp-step4 {Γ} ⇓-tt = fix-problem →⟨ fp-step2 ⟩ fp-step3 ⇓-tt
 ```
 The other half of the argument, assuming `halt (fix-problem) ⇓ ff`, is quite a bit simpler.
 To prove halting, we only need to exhibit some particular sequence of reductions:
-```agda
+```Agda
 fp-step5
    : ∀ {Γ}
    → (app (halt {Γ}) fix-problem) ⇓ ff
@@ -527,7 +527,7 @@ fp-step6 ⇓-ff = fix-problem →⟨ fp-step2 ⟩ fp-step5 ⇓-ff
 
 Finally, let's package up these results into their respective contradictions:
 
-```agda
+```Agda
 fix-problem-tt
   : ∀ {Γ}
   → (app (halt {Γ}) fix-problem) ⇓ tt
@@ -542,7 +542,7 @@ fix-problem-ff ⇓-ff ¬h = ¬h (halts V-tt (fp-step6 ⇓-ff))
 ```
 
 and put everything together:
-```agda
+```Agda
 halting : ⊥
 halting with halt-ret {nil} fix-problem
 halting | inj₁ ⇓tt  = fix-problem-tt ⇓tt (halt-tt fix-problem ⇓tt)
