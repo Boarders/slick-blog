@@ -1,1 +1,1 @@
-python3.13 -m http.server --directory new
+python3.14 -m http.server --directory new
