@@ -7,7 +7,7 @@ description: Explorations into Well-Founded Relations in constructive mathematic
 quote: Every reading of a classic is in fact a rereading.
 quoteAuthor: Italo Calvino
 agdaDevelopment: "Induction"
-publish: true
+publish: false
 
 ---
 
@@ -42,8 +42,7 @@ these classically equivalent definitions split apart. Classically, we
 have the following theorem giving us three different views on what a well-founded relation is:
 
 **Theorem (Well-founded Relations)**:
-$\def\X{\mathrm{X}} \def\R{\mathcal{R}} \def\U{\mathcal{U}} \def\x{\mathrm{x}}  \def\y{\mathrm{y}} $
-$\def\x'{\mathrm{x'}}  \def\y'{\mathrm{y'}} \def\P{\mathrm{P}} $
+<div style="display:none">\(\def\X{\mathrm{X}} \def\R{\mathcal{R}} \def\U{\mathcal{U}} \def\x{\mathrm{x}}  \def\y{\mathrm{y}} \def\x'{\mathrm{x'}}  \def\y'{\mathrm{y'}} \def\P{\mathrm{P}}\)</div>
 Suppose $\X$ is a set with binary relation $\R$ on it, meaning $ \R \subset \X \times \X$. We write $\R$ infix --
   $ \x \R \y$ -- to mean that $(\x, \y) \in R$.
 

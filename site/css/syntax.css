@@ -56,6 +56,14 @@ code {
     font-style: italic;
 }
 
+/* Don't let definition/constructor highlighting override comment color */
+.sourceCode.agda .co dfn,
+.sourceCode.agda .co .cn {
+    color: inherit;
+    font-weight: inherit;
+    font-style: inherit;
+}
+
 /* Pragmas ({-# ... #-}) - Yellow/gold */
 .sourceCode.agda .pp {
     color: #e5c07b;
@@ -114,12 +122,12 @@ code {
 /* MathJax styling                           */
 /* ========================================== */
 
-/* Inline math - Soft peach */
+/* Inline math - matches Agda operator color */
 .math.inline {
-    color: #ffcba4;
+    color: #e0af68;
 }
 
-/* Display math - Soft peach */
+/* Display math - matches Agda operator color */
 .math.display {
-    color: #ffcba4;
+    color: #e0af68;
 }

@@ -6,12 +6,15 @@ tags: [Type theory, Lambda Calculus]
 description: The locally nameless approach to substitution.
 quote: "Now you people have names. That's because you don't know who you are. We know who we are, so we don't need names."
 quoteAuthor: Neil Gaiman, Coraline
+associatedRepo: "https://github.com/Boarders/LocallyNameless"
 publish: true
 ---
 
 
+_Note: the original version of this post unfortunately had name-capturing errors, and perhaps has some still remaining after fixing. Alas, I console myself that this particular misfortune is one that has befallen many of my betters._
+
 The untyped lambda calculus has a very simple grammar with just three term formers:
-$\def\sp{\mspace{5mu}}$
+<div style="display:none">\(\def\sp{\mspace{5mu}}\)</div>
 
 $$ \mathrm{term}
  \mathrel{\vcenter{\hbox{::}}{=}} v \sp
@@ -96,6 +99,7 @@ Notice how, because we use the same lambda terms with this representation, we st
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 import Data.Map as M
+import Data.Set (notMember)
 {-
 [...]
 -}
@@ -117,8 +121,35 @@ toLocallyNameless = go mempty
           env' = insert n 0 (M.map (+ 1) env)
         in
           Lam (F n) (go env' e)
+```
 
-fromLocallyNameless :: forall a . (Ord a) => Term (Var a) -> Term a
+When converting back from locally nameless we need to be careful about name capture: if the binder name already appears free in the body, naively reusing it would capture those free occurrences. We need a way to generate a fresh name and a way to collect free variables in locally nameless terms:
+
+```haskell
+-- A class for generating fresh names by incrementing:
+-- for Text this appends "'", so "x" becomes "x'", "x'" becomes "x''", etc.
+class Increment a where
+  incr :: a -> a
+
+instance (IsString t, Semigroup t) => Increment t where
+  incr = (<> "'")
+
+freeVarsLN :: (Ord a) => Term (Var a) -> Set a
+freeVarsLN (Var v) = case v of
+  F a  -> singleton a
+  B _  -> mempty
+freeVarsLN (App l r) = freeVarsLN l <> freeVarsLN r
+freeVarsLN (Lam _ e) = freeVarsLN e
+
+-- Keep incrementing the candidate name until it is not in the conflict set.
+freshName :: (Ord a, Increment a) => a -> Set a -> a
+freshName candidate conflicts
+  | candidate `notMember` conflicts = candidate
+  | otherwise = freshName (incr candidate) conflicts
+```
+
+```haskell
+fromLocallyNameless :: forall a . (Ord a, Increment a) => Term (Var a) -> Term a
 fromLocallyNameless = go mempty
   where
     go :: Map Int a -> Term (Var a) -> Term a
@@ -130,20 +161,23 @@ fromLocallyNameless = go mempty
                -- its binder
           B bv -> case bv `lookup` env of
             Just name -> Var name
-            Nothing   -> error $ 
+            Nothing   -> error $
               "Found bound variable :" <> show bv <> " without binder."
       App l r -> App (go env l) (go env r)
       Lam n e ->
         case n of
        -- if our lambda term has a Bound variable at a binding site something
        -- has gone horribly wrong
-          B bv -> error $ "Found unnamed variable at binding site" <> show bv
+          B bv -> error $ "Found unnamed variable at binding site :" <> show bv
           F v  ->
             let
-           -- We store the name of the binder in the environment
-              env' = insert 0 v (mapKeysMonotonic (+ 1) env)
+           -- Choose a fresh name that does not appear free in the body,
+           -- to avoid the binder capturing free occurrences of the same name.
+              fvs  = freeVarsLN e
+              v'   = freshName v fvs
+              env' = insert 0 v' (mapKeysMonotonic (+ 1) env)
             in
-              Lam v (go env' e)
+              Lam v' (go env' e)
 ```
 
 Now let's see that this works as expected (this is, for me, a worrying amount of bookeeping to leave to "Looks good!"). Let us use quickcheck to see that __fromLocallyNameless__ is a left inverse to __toLocallyNameless__:
@@ -153,21 +187,36 @@ import Test.Tasty.QuickCheck as QC
 {-
 [...]
 -}
--- We use a somewhat unprincipled approach to generating arbitrary terms
--- but for our purposes it will do the job.
 instance Arbitrary a => Arbitrary (Lam a) where
-  arbitrary =
-    do
-      i <- choose (0,10)
-      buildTerm i
+  arbitrary = sized $ \n -> genTerm n []
     where
-      buildTerm :: Int -> Gen (Term a)
-      buildTerm i
-        | i <= 2    = arbitrary >>= pure . Var
-        | i <= 8    = Lam <$> arbitrary <*> arbitrary
-       -- so that our terms don't explode we limit
-       -- the amount of branching we allow
-        | otherwise = App <$> arbitrary <*> arbitrary
+      genTerm :: Int -> [a] -> Gen (Term a)
+      genTerm size scope
+        | size <= 0 = genVar scope
+        | otherwise = frequency
+            [ (3, genVar scope)
+            , (2, genLam size scope)
+            , (1, genApp size scope)
+            ]
+
+      -- Pick either a variable in scope or a fresh arbitrary one.
+      genVar :: [a] -> Gen (Term a)
+      genVar [] = Var <$> arbitrary
+      genVar scope = oneof
+        [ Var <$> elements scope
+        , Var <$> arbitrary
+        ]
+
+      genLam :: Int -> [a] -> Gen (Term a)
+      genLam size scope = do
+        binder <- arbitrary
+        body   <- genTerm (size `div` 2) (binder : scope)
+        pure $ Lam binder body
+
+      genApp :: Int -> [a] -> Gen (Term a)
+      genApp size scope = do
+        let size' = size `div` 2
+        App <$> genTerm size' scope <*> genTerm size' scope
 
 -- |
 -- fromLocalyNameless is a left inverse to toLocallyNameless.
@@ -191,6 +240,26 @@ Note that in the code below, we follow (at least in spirit) the MM approach of u
 only use a type synonym; however, in a more substantial implementation, one should use a newtype to get the type safety that such a measure confers.
 ```haskell
 type Scope f x = f x
+```
+
+Before defining `open` we need a helper `shift` that adjusts bound variable indices when a term is moved to a different binding depth. When we substitute `image` at depth `outer`, any bound variables in `image` that refer to binders _outside_ it need their indices incremented by `outer` to remain valid in the new context:
+
+```haskell
+-- Shift all bound variable indices >= cutoff by `amount`.
+shift :: forall a . Int -> Term (Var a) -> Term (Var a)
+shift amount = shiftFrom 0
+  where
+    shiftFrom :: Int -> Term (Var a) -> Term (Var a)
+    shiftFrom cutoff = \case
+      Var v -> case v of
+        B bv | bv >= cutoff -> Var (B (bv + amount))
+             | otherwise    -> Var (B bv)
+        F fv -> Var (F fv)
+      App l r -> App (shiftFrom cutoff l) (shiftFrom cutoff r)
+      Lam n b -> Lam n (shiftFrom (cutoff + 1) b)
+```
+
+```haskell
                     -- ┌─── term we are substituting
                     -- │
                     -- │                 ┌─── body we are substituting into
@@ -205,8 +274,11 @@ open image = go 0 -- the bound variable begins at 0
         Var fbv ->
           case fbv of
          -- if the bound variable refers to the outer binder of the body
-         -- of the term then we substitute the image.
-            B bv | bv == outer -> image
+         -- of the term then we substitute the image, shifting its indices
+         -- to account for the binding depth at the substitution site.
+            B bv | bv == outer -> shift outer image
+                 -- variables above the substituted binder move one step closer
+                 | bv > outer  -> Var (B (bv - 1))
                  | otherwise   -> Var (B bv)
             F fv -> Var (F fv)
         App l r -> App (go outer l) (go outer r)
@@ -249,7 +321,7 @@ whnfLN term = go term []
           -> foldl' App t as
 
 
-whnf :: (Ord a) => Term a -> Term a
+whnf :: (Ord a, Increment a) => Term a -> Term a
     -- defer the work to the locally nameless terms
 whnf = fromLocallyNameless . whnfLN . toLocallyNameless
 
@@ -276,7 +348,7 @@ nfLN term = go term []
           -> foldl' App t (fmap nfLN as)
 
 
-nf :: (Ord a) => Term a -> Term a
+nf :: (Ord a, Increment a) => Term a -> Term a
   -- again we defer all the actual work to locally nameless terms.
 nf = fromLocallyNameless . nfLN . toLocallyNameless
 ```

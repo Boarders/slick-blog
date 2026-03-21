@@ -51,9 +51,28 @@ if (button) {
     function initFootnotes() {
         var footnoteRefs = document.querySelectorAll('a.footnote-ref');
         var popup = null;
+        var hideTimer = null;
+
+        function scheduleHide() {
+            hideTimer = setTimeout(function() {
+                if (popup && popup.parentNode) {
+                    popup.parentNode.removeChild(popup);
+                    popup = null;
+                }
+            }, 100);
+        }
+
+        function cancelHide() {
+            if (hideTimer) {
+                clearTimeout(hideTimer);
+                hideTimer = null;
+            }
+        }
 
         footnoteRefs.forEach(function(ref) {
             ref.addEventListener('mouseenter', function(e) {
+                cancelHide();
+
                 // Remove any existing popup
                 if (popup && popup.parentNode) {
                     popup.parentNode.removeChild(popup);
@@ -75,9 +94,8 @@ if (button) {
                         backLink.parentNode.removeChild(backLink);
                     }
 
-                    // Get just the text content
-                    var textContent = content.textContent || content.innerText;
-                    popup.textContent = textContent.trim();
+                    // Use innerHTML to preserve links and formatting
+                    popup.innerHTML = content.innerHTML.trim();
 
                     // Position popup
                     var rect = ref.getBoundingClientRect();
@@ -85,16 +103,14 @@ if (button) {
                     popup.style.left = rect.left + window.pageXOffset + 'px';
                     popup.style.top = (rect.bottom + window.pageYOffset + 5) + 'px';
 
+                    popup.addEventListener('mouseenter', cancelHide);
+                    popup.addEventListener('mouseleave', scheduleHide);
+
                     document.body.appendChild(popup);
                 }
             });
 
-            ref.addEventListener('mouseleave', function() {
-                if (popup && popup.parentNode) {
-                    popup.parentNode.removeChild(popup);
-                    popup = null;
-                }
-            });
+            ref.addEventListener('mouseleave', scheduleHide);
         });
     }
 

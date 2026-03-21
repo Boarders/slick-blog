@@ -102,6 +102,7 @@ data Post =
          , quote       :: Maybe String
          , quoteAuthor :: Maybe String
          , agdaDevelopment :: Maybe String
+         , associatedRepo  :: Maybe String
          , publish     :: Bool
          }
     deriving (Generic, Eq, Ord, Show, FromJSON, ToJSON, Binary)
@@ -266,7 +267,7 @@ buildAgdaProject projectPath = do
       when (not htmlExists) $ do
         liftIO . putStrLn $ "Building Agda project: " <> projectPath
         liftIO . putStrLn $ "Generating Agda HTML for: " <> configName projectConfig
-        let agdaCmd = "cd " <> projectPath <> " && /Users/cmcgill21/.cabal/bin/agda --html --html-dir=../../../" <> htmlDir <> " " <> configRootFile projectConfig
+        let agdaCmd = "cd " <> projectPath <> " && agda --html --html-dir=../../../" <> htmlDir <> " " <> configRootFile projectConfig
         liftIO $ callCommand agdaCmd
 
       let project = AgdaProject
@@ -371,16 +372,18 @@ main = do
 buildAgdaLinkMap :: [AgdaProject] -> Action (HashMap.HashMap T.Text (T.Text, T.Text, T.Text))
 buildAgdaLinkMap projects = do
   maps <- forP projects $ \project -> do
-    let htmlPath = outputFolder </> "agda" </> projectDir project </> htmlFile project
-    htmlExists <- doesFileExist htmlPath
-    if not htmlExists
-      then return HashMap.empty
-      else do
-        htmlContent <- liftIO $ T.readFile htmlPath
-        let projectName = T.pack (projectDir project)
-            fileName = T.pack (htmlFile project)
-            definitions = extractAgdaDefinitions htmlContent
-        return $ HashMap.fromList [(name, (projectName, fileName, anchor)) | (name, anchor) <- definitions]
+    let htmlDir = outputFolder </> "agda" </> projectDir project
+    htmlFiles <- getDirectoryFiles htmlDir ["*.html"]
+    let projectName = T.pack (projectDir project)
+    fileMaps <- forP htmlFiles $ \f -> do
+      htmlContent <- liftIO $ T.readFile (htmlDir </> f)
+      let fileName = T.pack f
+          definitions = extractAgdaDefinitions htmlContent
+      -- Index by both simple name (first occurrence wins) and full qualified name
+      let simpleEntries = [(name, (projectName, fileName, anchor)) | (name, anchor) <- definitions]
+          qualifiedEntries = [(anchor, (projectName, fileName, anchor)) | (_, anchor) <- definitions, T.isInfixOf "." anchor]
+      return $ HashMap.fromList (simpleEntries ++ qualifiedEntries)
+    return $ HashMap.unions fileMaps
   return $ HashMap.unions maps
 
 -- | Extract definition names and their anchors from Agda HTML
@@ -403,7 +406,7 @@ extractAgdaDefinitions html = go (T.lines html)
                                    then T.takeWhileEnd (/= '.') idValue
                                    else idValue
                   in if T.null idValue || T.all (\c -> c >= '0' && c <= '9') idValue
-                     then go rest  -- Skip numeric IDs
+                     then go (remaining : rest)  -- Skip numeric IDs but continue rest of line
                      else (simpleName, idValue) : go (remaining : rest)
 
 -- | Replace [text](agda-link: Name) and [agda-link: Name] with proper markdown links

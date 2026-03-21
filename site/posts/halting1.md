@@ -46,8 +46,7 @@ the argument in Agda and fill in most of the lingering details we brush aside he
 In the setting of the lambda calculus, a precise statement of halting can be given thusly:
 
 **Theorem ($\lambda$-Halting)**: There does not exist a $\lambda$-term
-$\def\h{\mathbf{HALT}} \def\s{\text{ }} \def\L{\mathrm{L}} \def\l{\mathrm{l}} \def\true{\mathbf{true}}
-\def\false{\mathbf{false}} \h$ such that for any given lambda term
+<div style="display:none">\(\def\h{\mathbf{HALT}} \def\s{\text{ }} \def\L{\mathrm{L}} \def\l{\mathrm{l}} \def\true{\mathbf{true}} \def\false{\mathbf{false}}\)</div>$\h$ such that for any given lambda term
 $\L$,  $\h \text{ } \L$ evaluates to $\true$ when $\L$ terminates and $\false$ otherwise.
 
 Here, by termination, we mean what is otherwise called normalization. A term
