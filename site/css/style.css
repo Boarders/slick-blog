@@ -340,6 +340,12 @@ a.tag, a.category {
     word-break: break-word; }
   .post p + p {
     margin-top: 1em; }
+  .post .note {
+    color: #a89984;
+    border-left: 3px solid #555;
+    padding-left: 0.8em;
+    margin-bottom: 1.5em;
+    font-size: 0.9em; }
   .post > p:first-of-type:first-letter {
     font-size: 8em;
     line-height: 0.1em;

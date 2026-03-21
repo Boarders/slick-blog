@@ -11,7 +11,8 @@ publish: true
 ---
 
 
-_Note: the original version of this post unfortunately had name-capturing errors, and perhaps has some still remaining after fixing. Alas, I console myself that this particular misfortune is one that has befallen many of my betters._
+<div class="note">Note: the original version of this post unfortunately had name-capturing errors, and perhaps has some still remaining after fixing. Alas, I console myself that this particular misfortune is one that has befallen many of my betters.</div>
+
 
 The untyped lambda calculus has a very simple grammar with just three term formers:
 <div style="display:none">\(\def\sp{\mspace{5mu}}\)</div>
@@ -57,7 +58,7 @@ $$ (\lambda \sp \mathrm{x} \sp . \sp \lambda \sp y \sp . \sp  x) \sp \mathrm{y}
 
 Here we have substituted the _free_ variable y into our lambda term and it has become _bound_. This is semantically incorrect: the names of free variables are meaningful because, in spirit, they refer to names we have defined elsewhere (that is, they can be looked up within a context, or, in other words, they are _open_ for further substitution). Conversely, the names of bound variables are, computationally speaking, unimportant. In fact, it is usual to refer to the grammar we have introduced earlier as _pre-lambda terms_ and to take lambda terms as referring to the equivalence classes under $\alpha$-equivalence. This refers to the (equivalence) relation whereby two terms are equivalent if we can consistently rename the bound variables of one to obtain the other (here too we need to take care, $\alpha$-renaming $\mathrm{x}$ to $\mathrm{y}$ in the above term would lead to a different sort of variable capture). Most accounts of $\alpha$-equivalence are themselves intimiately tied up with the question of how to perform substitution (and locally nameless is no different in this respect).
 
-In practice this means that in order to compute  $(\lambda \mathrm{x} \sp . \sp \mathrm{f}) \sp \mathrm{arg}$ we would first $\alpha$-rename $\mathrm{x}$ to a variable that is neither already named within $\mathrm{f}$, nor appears free within $\mathrm{arg}$. Carrying out such a procedure by brute force is workable, but tends to be rather error-prone. A straightforward approach along these lines is described in [this excellent post](http://augustss.blogspot.com/2007/10/simpler-easier-in-recent-paper-simply.html) by Lennart Augustsson. 
+In practice this means that in order to compute  $(\lambda \mathrm{x} \sp . \sp \mathrm{f}) \sp \mathrm{arg}$ we would first $\alpha$-rename $\mathrm{x}$ to a variable that is neither already named within $\mathrm{f}$, nor appears free within $\mathrm{arg}$. Carrying out such a procedure by brute force is workable, but tends to be rather error-prone. A straightforward approach along these lines is described in [this excellent post](http://augustss.blogspot.com/2007/10/simpler-easier-in-recent-paper-simply.html) by Lennart Augustsson.
 
 There are a [whole host](https://www.schoolofhaskell.com/user/edwardk/bound) of more sophisticated methods for dealing with the problem of capture-avoiding substitution. Perhaps one of the best known is to use De-Bruijn indices. The idea here is to replace all bound variables by a natural number. This indicates the variable's distance from its binding site. All free variables are then represented by distinct natural numbers greater than the maximum depth of any binding site in the term. We then keep track of these variables within the environment under which computation is performed. For instance, the following is how one might translate a typical term into De-Bruijn indices:
 
@@ -343,7 +344,7 @@ nfLN term = go term []
         ((Lam _ body) , a:args)
           -> go (substitute a body) args
         _
-          -- If we encounter no further lambdas then we reduce 
+          -- If we encounter no further lambdas then we reduce
           -- each of our built-up arguments before re-applying App.
           -> foldl' App t (fmap nfLN as)
 
@@ -373,15 +374,15 @@ infixl 5 .$
 -- The unary natural numbers.
 data Nat = Z | S Nat
 
--- Notice here in the inductive case we reduce to normal form. 
--- Not doing so leads to a subtly different term wherein we 
+-- Notice here in the inductive case we reduce to normal form.
+-- Not doing so leads to a subtly different term wherein we
 -- are applying "S" to a term that itself is a lambda term
 -- applied to two arguments but not yet β-reduced.
 fromNat :: Nat -> Term Text
 fromNat Z     = Lam "S" (Lam "Z" "Z")
 fromNat (S n) = Lam "S" (Lam "Z" ("S" .$ (nf $ fromNat n .$ "S" .$ "Z")))
 
--- Let us also give ourselves names for the first 
+-- Let us also give ourselves names for the first
 -- few church numerals for convenience:
 cZero  = fromNat Z
 cOne   = fromNat (S Z)
@@ -414,14 +415,14 @@ Let us translate this into Haskell:
 ```haskell
 churchAdd :: Term Text
 churchAdd =
-  Lam "n" 
-    (Lam "m" 
+  Lam "n"
+    (Lam "m"
       (Lam "S" (Lam "Z" ((App "n" "S") .$ ("m" .$ "S" .$ "Z")))))
 
 churchMult :: Term Text
-churchMult = 
-  Lam "n" 
-    (Lam "m" 
+churchMult =
+  Lam "n"
+    (Lam "m"
       (Lam "S" (Lam "Z" ("n" .$ ("m" .$ "S") .$ "Z"))))
 ```
 
