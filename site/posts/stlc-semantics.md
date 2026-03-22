@@ -40,6 +40,7 @@ $$
 $$
      \vdash e \ty \G
 $$
+
 Such a language would also need to have an equality judgment capturing the equational theory of groups:
 
 $$
@@ -76,6 +77,7 @@ $$
 
 Now, in order for us to interpret this theory we need not just to interpret the symbols of the theory, but to give a semantics of each judgment, and thus
 to give meaning first to contexts, and then to judgments. Here is an idea for how we might do so -- given a judgment of this form:
+
 $$
    \x \ty \G , \y \ty \G  \vdash \x \cdot \y \ty \G
 $$
@@ -85,11 +87,13 @@ $$
 $$
 
 Similarly, given a term judgment like:
+
 $$
    \x \ty \G , \y \ty \G, \z \ty \G  \vdash (\x \cdot \y) \cdot \z \ty \G
 $$
 
 we want to interpret this semantically as a function of the form:
+
 $$
   \X \times \X \times \X \rightarrow \X
 $$
@@ -105,6 +109,7 @@ $$
 $$
 
 Secondly, we note that, in a certain sense, our theory gives rise to a _canonical model_ where we take as our set of elements in context $\Gamma = \{\x\_1, \ldots, \x\_\n\}$, precisely the equivalence class of judgments for the theory and, we take for morphisms, equivalence classes of substitutions. We won't spell out this example here as we do something similar for simply typed lambda calculus, but we will keep in mind the following takeaways:
+
 - A semantics of a type theory might be thought of as a certain kind of algebraic theory
 - This semantics comes with a canonical syntactical model of the theory which should, in some sense, be the free theory.
 - Our semantics should be _sound_ for the type theory -- anything we prove in the type theory should be true for all algebraic models.
@@ -417,6 +422,7 @@ data _≡Tm_ : {Γ : Ctxt} {t : Ty} → Tm Γ t → Tm Γ t → Type where
   𝟙-η : {Γ : Ctxt} → (tm-𝟙 : Tm Γ 𝟙) → tm-𝟙 ≡Tm tt
 ```
 We note the following:
+
 - We make equality automatically an equivalence relation, corresponding to the usual rules:
 
 $$
