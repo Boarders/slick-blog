@@ -400,4 +400,4 @@ isIdentStart :: Char -> Bool
 isIdentStart c = isIdentChar c  -- In Agda, any identifier character can start an identifier
 
 isIdentChar :: Char -> Bool
-isIdentChar c = isAlphaNum c || c `elem` ("_'-′″‴∘∙×⇒⊎≡≢≤≥≈≃∀∃λΛ∇∆√∑∏∫⊕⊗⊥⊤⊢⊣⊨⊔⊓∪∩⊆⊇⊂⊃∈∉∋∌ℕℤℚℝℂ𝔸𝔹ℙ𝕆𝟙𝟘/[]" :: String)
+isIdentChar c = isAlphaNum c || c `elem` ("_'-′″‴∘∙×⇒⊎≡≢≤≥≈≃∀∃λΛ∇∆√∑∏∫⊕⊗⊥⊤⊢⊣⊨⊔⊓∪∩⊆⊇⊂⊃∈∉∋∌ℕℤℚℝℂ𝔸𝔹ℙ𝕆𝟙𝟘/[]⟦⟧" :: String)

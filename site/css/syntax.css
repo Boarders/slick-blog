@@ -1,6 +1,7 @@
 /* Default syntax highlighting for all code blocks */
 pre {
     background-color: null;
+    overflow-x: auto;
 }
 
 code {

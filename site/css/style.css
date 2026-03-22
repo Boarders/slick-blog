@@ -742,6 +742,7 @@ a.footnote-ref {
   font-size: 0.85em;
   vertical-align: super;
   padding: 0 2px;
+  line-height: 1;
 }
 
 a.footnote-ref:hover {
@@ -769,5 +770,8 @@ a.footnote-ref:hover {
 }
 
 
+mjx-container[display="true"] {
+  overflow-x: auto;
+}
 
 /*# sourceMappingURL=style.css.map */
