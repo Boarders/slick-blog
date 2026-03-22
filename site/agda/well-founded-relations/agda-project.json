@@ -1,0 +1,6 @@
+{
+  "name": "Inductive Relations",
+  "rootModule": "InductiveRelations",
+    "rootFile": "InductiveRelations.agda",
+  "publish": true
+}
