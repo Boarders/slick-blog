@@ -9,8 +9,8 @@ open import Function using (_∘_)
 open import Function.Bundles using (Equivalence)
 open import Agda.Primitive
 
--- Unlike the stdlib's Rel (which has separate levels for the carrier and the relation),
--- these fix both to the same level ℓ
+-- Unlike the stdlib's Rel (which has levels for the carrier and the relation),
+-- we use the same level ℓ
 Rel :  ∀ {ℓ : Level} → Set ℓ → Set (ℓsuc ℓ)
 Rel {ℓ = ℓ} A = A → A → Set ℓ
 
@@ -30,7 +30,7 @@ module InductiveDefs {ℓ : Level} (A : Set ℓ) where
   InductiveR R = ∀ (P : Property A) → InductiveP R P
 
   module InductiveTrans where
-    -- _⁺ is the transitive closure (no reflexivity)
+    -- _⁺ is the transitive closure of the relation
     data _⁺ (R : Rel A) : Rel A where
       gen⁺  : ∀ {x y : A} → R x y → (R ⁺) x y
       _⁺↦_  : ∀ {x y z : A} → (R ⁺) x y → R y z → (R ⁺) x z
@@ -43,7 +43,7 @@ module InductiveDefs {ℓ : Level} (A : Set ℓ) where
     belowP : {R : Rel A} → Property A → Property A
     belowP {R = R} P b = ∀ (a : A) → (((R ⁺) *) a b) → P a
 
-    lem
+    strong-induction-lemma
       : {R : Rel A} {P : Property A} →
       IndPrinciple (R ⁺) P → IndPrinciple R (belowP {R} P)
     -- We are trying to prove P* c holds when we have (a ≤R c)
@@ -60,7 +60,7 @@ module InductiveDefs {ℓ : Level} (A : Set ℓ) where
     --   ∙ If (p : a <R⁺ b <R c) holds then we have by R
     --     induction that P* b holds and so we have that P a
     --     holds by definition of P*
-    lem R⁺ind c stepR-P* .c id =
+    strong-induction-lemma R⁺ind c stepR-P* .c id =
       R⁺ind c λ {
         a (gen⁺ Rac) → stepR-P* a Rac a id ;
         a (_⁺↦_ {y = b} R⁺ab Rbc) → stepR-P* b Rbc a (gen* R⁺ab)}
@@ -69,14 +69,15 @@ module InductiveDefs {ℓ : Level} (A : Set ℓ) where
     --
     -- But, we have that P* b holds by R induction and so we have
     -- P b
-    lem R⁺ind c stepR-P* b (gen* (gen⁺ Rbc)) with stepR-P* b Rbc
+    strong-induction-lemma R⁺ind c stepR-P* b (gen* (gen⁺ Rbc)) with stepR-P* b Rbc
     ... | P*b = P*b b id
     -- Similarly, here we have a <R⁺ b <R c, and we want to show
     -- P a holds
     --
     -- But, by R induction we have that P*b holds and so we have
     -- that P a holds as a <R⁺ b
-    lem indP c stepR-P* a (gen* (_⁺↦_ {y = b} R⁺ab Rbc)) with
+
+    strong-induction-lemma indP c stepR-P* a (gen* (_⁺↦_ {y = b} R⁺ab Rbc)) with
       stepR-P* b Rbc
     ... | P*b = P*b a (gen* R⁺ab)
 
@@ -87,7 +88,7 @@ module InductiveDefs {ℓ : Level} (A : Set ℓ) where
         InductiveP R (belowP {R} P) →
         InductiveP (R ⁺) P
     liftInd IndP* indR⁺ a =
-      IndP* (lem indR⁺) a a id
+      IndP* (strong-induction-lemma indR⁺) a a id
 
     RtoR⁺-inductive : {R : Rel A} → InductiveR R → InductiveR (R ⁺)
     RtoR⁺-inductive {R} IndR P = liftInd (IndR (belowP P))
