@@ -12,6 +12,7 @@ import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
 import Control.Monad.State
 import Data.List (foldl')
+import Data.Maybe (listToMaybe)
 
 -- | Entity types that can be highlighted across code blocks
 data Entity = Constructor | Def
@@ -261,15 +262,16 @@ extractLocalNames block =
       -- If in constructor zone, skip constructor names but check for exit
       | inConstructorZone =
           if isUnindentedNonBlank line
-          then extractFromLine line ++ extractInfixOperator line ++ extractNamesFromLines rest False
+          then extractFromLine line (listToMaybe rest) ++ extractInfixOperator line ++ extractNamesFromLines rest False
           else extractNamesFromLines rest True  -- Skip names in constructor zone
       -- Not in constructor zone, extract normally
       | otherwise =
-          extractFromLine line ++ extractInfixOperator line ++ extractNamesFromLines rest False
+          extractFromLine line (listToMaybe rest) ++ extractInfixOperator line ++ extractNamesFromLines rest False
 
 -- | Extract function/type names from a line (only when NOT in constructor zone)
-extractFromLine :: T.Text -> [T.Text]
-extractFromLine line =
+-- mNextLine allows detecting multi-line type signatures where : appears on the next line
+extractFromLine :: T.Text -> Maybe T.Text -> [T.Text]
+extractFromLine line mNextLine =
   -- Check for regular type signatures
   case T.breakOn "></a>" line of
     (_, rest) -> case T.stripPrefix "></a>" rest of
@@ -278,10 +280,20 @@ extractFromLine line =
         let trimmed = T.dropWhile isSpace after
             (word, remainder) = T.span isIdentChar trimmed
             trimmedRemainder = T.dropWhile isSpace remainder
+            colonHere = T.isPrefixOf "<span class=\"ot\">:</span>" trimmedRemainder ||
+                        T.isPrefixOf ":" trimmedRemainder
+            colonNextLine = case mNextLine of
+              Nothing -> False
+              Just nextLine ->
+                case T.stripPrefix "></a>" (snd (T.breakOn "></a>" nextLine)) of
+                  Just nextAfter ->
+                    let nextTrimmed = T.dropWhile isSpace nextAfter
+                    in T.isPrefixOf "<span class=\"ot\">:</span>" nextTrimmed ||
+                       T.isPrefixOf ":" nextTrimmed
+                  Nothing -> False
         in if not (T.null word) &&
               isIdentStart (T.head word) &&
-              (T.isPrefixOf "<span class=\"ot\">:</span>" trimmedRemainder ||
-               T.isPrefixOf ":" trimmedRemainder)
+              (colonHere || colonNextLine)
            then [word]
            else []
       Nothing -> []
@@ -400,4 +412,4 @@ isIdentStart :: Char -> Bool
 isIdentStart c = isIdentChar c  -- In Agda, any identifier character can start an identifier
 
 isIdentChar :: Char -> Bool
-isIdentChar c = isAlphaNum c || c `elem` ("_'-′″‴∘∙×⇒⊎≡≢≤≥≈≃∀∃λΛ∇∆√∑∏∫⊕⊗⊥⊤⊢⊣⊨⊔⊓∪∩⊆⊇⊂⊃∈∉∋∌ℕℤℚℝℂ𝔸𝔹ℙ𝕆𝟙𝟘/[]⟦⟧" :: String)
+isIdentChar c = isAlphaNum c || c `elem` ("_'-′″‴∘∙×⇒⊎≡≢≤≥≈≃∀∃λΛ∇∆√∑∏∫⊕⊗⊥⊤⊢⊣⊨⊔⊓∪∩⊆⊇⊂⊃∈∉∋∌ℕℤℚℝℂ𝔸𝔹ℙ𝕆𝟙𝟘/[]⟦⟧⁺⁻⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ*" :: String)
