@@ -638,54 +638,70 @@ a.tag, a.category {
   top: calc(50% - 15px);
   text-decoration: none; }
 
-@media only screen and (max-width: 750px) {
+@media only screen and (max-width: 768px) {
   header {
-    color: #FFFFFC;
     height: 3em;
     background: rgba(76, 76, 76, 0.9); }
 
-  #beaconhome {
-    color: #FFFFFC;
-    font-size: 2em;
-    margin: 0; }
+  /* Shrink #page top margin to match the smaller mobile header */
+  #page {
+    margin-top: 3.5em; }
 
+  /* Pull sidebars down slightly so beacons are vertically centred */
+  .left-sidebar,
+  .right-sidebar {
+    top: 0.35em; }
+
+  /* Compact pill-shaped nav buttons that fit inside the 3em header */
   .beacon {
-    color: #FFFFFC;
-    font-size: 2em;
-    margin: 0; }	
+    font-size: 1rem;
+    height: 2.2em;
+    width: auto;
+    padding: 0 0.75em;
+    border-radius: 0.4em;
+    margin: 0 6px 0 0;
+    opacity: 0.85; }
 
-  #theme-button {
-    color: #FFFFFC;
-    font-size: 1.5em;
-    top: 0.5em;
-    right: 0.2em;
-    opacity: 0.5; } }
-@media only screen and (min-device-width: 320px) and (max-device-width: 480px) {
-  /* Styles */
+  #home-text,
+  #about-text {
+    font-size: 1.1em; }
+
+  /* Slightly smaller social icons on mobile */
+  .ext-link img {
+    width: 26px;
+    height: 26px; }
+
+  /* Content: increase horizontal padding and reduce font slightly */
+  .post {
+    padding: 0 1.25rem;
+    font-size: 1rem;
+    margin-top: 1.5em; }
+
+  /* Reduce the drop-cap — 8em is ~128px and dominates the first screen */
+  .post > p:first-of-type:first-letter {
+    font-size: 4em;
+    line-height: 0.1em; }
+
+  .post-image {
+    height: auto;
+    width: auto;
+    max-width: 100%; }
+
   h2 {
     border-top: 3px solid #777; }
 
   .page {
-    min-width: none;
-    max-width: none;
     width: auto;
-    padding: 0 1em;
+    max-width: none;
+    padding: 0 1.25rem;
     margin: 0;
     box-sizing: border-box; }
 
   .page p {
     padding-bottom: 1em;
     font-size: 1em;
-    line-height: 1.8em; }
+    line-height: 1.8em; } }
 
-  .post-image {
-    height: auto;
-    width: auto;
-    max-width: 280px; }
-
-  .page > p:first-of-type:first-letter {
-    font-size: 4em;
-    line-height: 0.1em; } }
 @media only screen and (max-height: 450px) {
   .masthead {
     min-height: 350px; } }
