@@ -155,12 +155,12 @@ subst ρ (bool b th el) = bool (subst ρ b) (subst ρ th) (subst ρ el)
 subst ρ (fix body) = fix (subst (exts ρ) body)
 ```
 
-This gives parallel substitution across an entire context `Γ` to 
+This gives parallel substitution across an entire context `Γ` to
 another context `Δ`. Intuitively we take an open term with variables
 of type `Γ` and replace them with terms of type `Δ`. To make
 this clearer let us give an example:
-```
--- Our example context has three 𝔹 variables. 
+```Agda
+-- Our example context has three 𝔹 variables.
 con₁ : Con
 con₁ = ∙ , 𝔹 , 𝔹 , 𝔹
 
@@ -180,7 +180,7 @@ subst-term₁ : subst sub₁ term₁ ≡ bool tt ff tt
 subst-term₁ = refl
 ```
 
-From parallel substitution, it is easy for us to define ordinary substitution 
+From parallel substitution, it is easy for us to define ordinary substitution
 of a single binding variable. We define the context morphism that decrements all
 variables in $\Gamma$ and returns the substituting term for the initial variable:
 
@@ -207,8 +207,8 @@ term₂  : Expr con₂ 𝔹
 term₂  = app (var (s z)) (var z)
 
 -- Once we substitute b ↦ tt we have the smaller typing
--- context: 
---   ∙ , 𝔹 ⇒ 𝔹 
+-- context:
+--   ∙ , 𝔹 ⇒ 𝔹
 -- and so we decrement the n variable.
 subst-term₂ : term₂ [ tt ] ≡ app (var z) tt
 subst-term₂ = refl
@@ -302,10 +302,10 @@ data Halt {Γ a} (e :  Expr Γ a) : Set where
 
 We are now in the position to postulate the existence of a `halt`
 function with the expected properties:
-```
+```Agda
 postulate
   halt     : ∀ {Γ} {a} → Expr Γ (a ⇒ 𝔹)
--- halt is a closed term
+  -- halt is a closed term
   halt-sub :
     ∀ {Γ Δ} {a}
     → (ρ : ∀ {ty} → ty ∈ Γ → Expr Δ ty)
@@ -367,13 +367,12 @@ This follows from the more general property of confluence:
 **Definition [Confluence]**: A reduction relation $\rightarrow$ on a set $\mathcal{T}$ is confluent
 if for any $e1, e2, e3 \in \mathcal{T}$ there exists an $e4$ such that the following diagram
 commutes:
-    $$
-    \require{AMScd}
-    \begin{CD}
-    e1     @>>>  e2\\
-    @VVV        @VV*V\\
-    e3     @>*>>  e4
-    \end{CD}
+$$
+\begin{array}{ccc}
+e_1 & \xrightarrow{} & e_2 \\
+\Big\downarrow & & \Big\downarrow{\scriptstyle *} \\
+e_3 & \xrightarrow{\;*\;} & e_4
+\end{array}
 $$
 Here $\xrightarrow{*}$ denotes the reflective, transitive closure of $\rightarrow$.
 
@@ -428,7 +427,7 @@ We can then put together `halt-⊥` and `bot-non-term` to show that any term tha
 Now, we are better placed to show that if `halt fix-problem` reduces to `tt`
 then `fix-problem` reduces to `bot` and thus we get a contradiction. The final general
 result we will need is one that connects the big step operational semantics of Booleans
-to that of our conditional function, `bool`. 
+to that of our conditional function, `bool`.
 
 ```Agda
 -- In both cases if there is no reduction then we directly step.
@@ -553,8 +552,8 @@ halting | inj₂ ⇓ff  = fix-problem-ff ⇓ff (halt-ff fix-problem ⇓ff)
 Hopefully this post has given an approachable account of formalising one of the
 central results in computability theory. We hope to have also demonstrated, from
 a programming language theory perspective, some of the advantages of the lambda calculus
-as a foundational theory of computation (over, for example, Turing machines). 
+as a foundational theory of computation (over, for example, Turing machines).
 Thank you for reading! The full code for this proof
  is available [here](https://github.com/Boarders/agda-halting).
 
-<i>With warmest thanks to Alixandra Prybyla and Sam Derbyshire for their valuable feedback.</i>
+<i>With warmest thanks to Sam Derbyshire for their valuable feedback.</i>
