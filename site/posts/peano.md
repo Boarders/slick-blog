@@ -10,6 +10,7 @@ publish: true
 
 ---
 
+<div style="display:none">\(\def\N{\mathsf{N}}\)</div>
 
   The 19th century brought about an unprecedented revolution in the foundations of mathematics culminating in the Zermelo--Frankel (ZF) axioms.
 The ZF axioms gave a logical basis to Cantor's _set theory_ as a foundational theory,
@@ -18,7 +19,6 @@ It was through this newly-systematized approach that the axiomatic method was bo
 This is of historical and philosophical interest as it marks a decisive structuralist turn
 in mathematical thought. It is at this time that mathematical objects begin to be characterized
 not by any particular construction, but by the collection of axioms (or laws) an object satisfies.
-<div style="display:none">\(\def\N{\mathsf{N}}\)</div>
 
 Consider a paradigmatic case: characterizing the natural numbers. In this post we will explore two
 different formulations of the natural numbers, the first of which is given by Peano in the late 19th century, and the second of which is a more categorical approach inspired by Lawvere.
